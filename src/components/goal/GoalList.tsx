@@ -92,10 +92,10 @@ export function GoalList({ userId, scope, periodKey }: GoalListProps) {
                 type="checkbox"
                 checked={goal.is_done}
                 onChange={() => toggleDone(goal)}
-                className="w-4 h-4 accent-pixel-purple cursor-pointer"
+                className="w-5 h-5 shrink-0 accent-pixel-purple cursor-pointer"
               />
               <span
-                className={`flex-1 font-body text-sm break-words ${
+                className={`flex-1 min-w-0 font-body text-sm break-words ${
                   goal.is_done ? "line-through text-pixel-ink-soft" : ""
                 }`}
               >
@@ -104,7 +104,7 @@ export function GoalList({ userId, scope, periodKey }: GoalListProps) {
               <button
                 onClick={() => remove(goal)}
                 aria-label="삭제"
-                className="font-pixel text-[10px] px-1.5 py-1 border-2 border-pixel-border rounded-[6px] bg-pixel-red text-pixel-bg shadow-[var(--pixel-shadow-sm)] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer"
+                className="font-pixel text-[10px] min-w-[36px] min-h-[36px] flex items-center justify-center shrink-0 border-2 border-pixel-border rounded-[6px] bg-pixel-red text-pixel-bg shadow-[var(--pixel-shadow-sm)] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer"
               >
                 X
               </button>

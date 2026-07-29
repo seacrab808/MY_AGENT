@@ -18,15 +18,15 @@ export function HeroBanner({ title, subtitle, right }: HeroBannerProps) {
       <span className={`absolute w-1 h-1 bg-white/0 bottom-3 left-1/3 opacity-50 ${CLOUD}`} />
 
       <div className="relative flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="font-pixel text-lg sm:text-2xl text-pixel-ink [text-shadow:2px_2px_0_#fff]">
+        <div className="min-w-0">
+          <h1 className="font-pixel text-base sm:text-2xl text-pixel-ink break-words [text-shadow:2px_2px_0_#fff]">
             {title}
           </h1>
           {subtitle && (
-            <p className="font-cute text-base text-pixel-ink/80 mt-1">{subtitle}</p>
+            <p className="font-cute text-base text-pixel-ink/80 mt-1 break-words">{subtitle}</p>
           )}
         </div>
-        {right && <div className="relative flex items-center gap-2">{right}</div>}
+        {right && <div className="relative flex items-center gap-2 flex-wrap">{right}</div>}
       </div>
     </div>
   );

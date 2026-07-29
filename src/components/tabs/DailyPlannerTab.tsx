@@ -29,10 +29,12 @@ export function DailyPlannerTab({ userId }: DailyPlannerTabProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <PixelCard className="flex items-center justify-between">
-        <PixelIconButton onClick={() => setDate((d) => subDays(d, 1))}>{"<"}</PixelIconButton>
-        <div className="text-center">
-          <h2 className="font-cute text-2xl">
+      <PixelCard className="flex items-center justify-between gap-2">
+        <PixelIconButton onClick={() => setDate((d) => subDays(d, 1))} className="shrink-0">
+          {"<"}
+        </PixelIconButton>
+        <div className="text-center min-w-0">
+          <h2 className="font-cute text-lg sm:text-2xl break-words">
             {format(date, "yyyy년 M월 d일")} {KOREAN_WEEKDAY[date.getDay()]}요일
           </h2>
           <button
@@ -42,7 +44,9 @@ export function DailyPlannerTab({ userId }: DailyPlannerTabProps) {
             오늘로
           </button>
         </div>
-        <PixelIconButton onClick={() => setDate((d) => addDays(d, 1))}>{">"}</PixelIconButton>
+        <PixelIconButton onClick={() => setDate((d) => addDays(d, 1))} className="shrink-0">
+          {">"}
+        </PixelIconButton>
       </PixelCard>
 
       <div className="grid md:grid-cols-2 gap-4">

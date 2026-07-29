@@ -46,7 +46,7 @@ export function PixelCard({
       {/* className is intentionally re-applied here so layout utilities
           (flex, items-*, h-full, text-*) passed by callers reach the
           actual content container, not just the outer frame. */}
-      <div className={`p-4 ${className} ${bodyClassName}`}>{children}</div>
+      <div className={`p-3 sm:p-4 ${className} ${bodyClassName}`}>{children}</div>
     </div>
   );
 }

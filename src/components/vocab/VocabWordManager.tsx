@@ -59,12 +59,14 @@ export function VocabWordManager({ words, onAdd, onRemove, onToggleDifficult }: 
                 word.is_difficult ? "bg-pixel-yellow" : "bg-pixel-bg"
               }`}
             >
-              <span className="font-cute text-base">{word.term}</span>
-              <span className="font-body text-sm text-pixel-ink-soft flex-1">{word.meaning}</span>
+              <span className="font-cute text-base shrink-0 max-w-[40%] break-words">{word.term}</span>
+              <span className="font-body text-sm text-pixel-ink-soft flex-1 min-w-0 break-words">
+                {word.meaning}
+              </span>
               <button
                 onClick={() => onToggleDifficult(word)}
                 title="어려운 단어로 표시"
-                className={`font-pixel text-[10px] px-1.5 py-1 border-2 border-pixel-border rounded-[6px] shadow-[var(--pixel-shadow-sm)] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer ${
+                className={`font-pixel text-[10px] min-w-[36px] min-h-[36px] flex items-center justify-center shrink-0 border-2 border-pixel-border rounded-[6px] shadow-[var(--pixel-shadow-sm)] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer ${
                   word.is_difficult ? "bg-pixel-red text-pixel-bg" : "bg-pixel-panel"
                 }`}
               >
@@ -73,7 +75,7 @@ export function VocabWordManager({ words, onAdd, onRemove, onToggleDifficult }: 
               <button
                 onClick={() => onRemove(word)}
                 aria-label="삭제"
-                className="font-pixel text-[10px] px-1.5 py-1 border-2 border-pixel-border rounded-[6px] bg-pixel-red text-pixel-bg shadow-[var(--pixel-shadow-sm)] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer"
+                className="font-pixel text-[10px] min-w-[36px] min-h-[36px] flex items-center justify-center shrink-0 border-2 border-pixel-border rounded-[6px] bg-pixel-red text-pixel-bg shadow-[var(--pixel-shadow-sm)] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer"
               >
                 X
               </button>

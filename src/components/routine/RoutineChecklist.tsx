@@ -91,10 +91,10 @@ export function RoutineChecklist({ userId, period, dateKey, label, emoji }: Rout
                 type="checkbox"
                 checked={item.is_done}
                 onChange={() => toggle(item)}
-                className="w-4 h-4 accent-pixel-yellow cursor-pointer"
+                className="w-5 h-5 shrink-0 accent-pixel-yellow cursor-pointer"
               />
               <span
-                className={`flex-1 font-body text-sm break-words ${
+                className={`flex-1 min-w-0 font-body text-sm break-words ${
                   item.is_done ? "line-through text-pixel-ink-soft" : ""
                 }`}
               >
@@ -103,7 +103,7 @@ export function RoutineChecklist({ userId, period, dateKey, label, emoji }: Rout
               <button
                 onClick={() => remove(item)}
                 aria-label="삭제"
-                className="font-pixel text-[10px] px-1.5 py-1 border-2 border-pixel-border rounded-[6px] bg-pixel-red text-pixel-bg shadow-[var(--pixel-shadow-sm)] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer"
+                className="font-pixel text-[10px] min-w-[36px] min-h-[36px] flex items-center justify-center shrink-0 border-2 border-pixel-border rounded-[6px] bg-pixel-red text-pixel-bg shadow-[var(--pixel-shadow-sm)] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer"
               >
                 X
               </button>

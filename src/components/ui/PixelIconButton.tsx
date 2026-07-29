@@ -24,7 +24,7 @@ export function PixelIconButton({
 }: PixelIconButtonProps) {
   return (
     <button
-      className={`font-pixel text-[10px] leading-none px-2 py-2 border-[3px] border-pixel-border rounded-[8px] shadow-[var(--pixel-bevel)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[var(--pixel-bevel-active)] transition-transform cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${toneClasses[tone]} ${className}`}
+      className={`font-pixel text-[10px] leading-none min-w-[44px] min-h-[44px] flex items-center justify-center px-2 py-2 border-[3px] border-pixel-border rounded-[8px] shadow-[var(--pixel-bevel)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[var(--pixel-bevel-active)] transition-transform cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${toneClasses[tone]} ${className}`}
       {...rest}
     >
       {children}
