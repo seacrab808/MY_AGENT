@@ -6,7 +6,7 @@
 ## 기능
 
 - **월간 캘린더**: 자연어 채팅으로 등록한 일정이 도트 마커로 표시, 날짜 클릭 시 팝업 + 월간 TODO
-- **채팅창**: "8월 5일 15시에 논문 미팅"처럼 입력하면 GPT가 날짜/시간/제목을 파싱해 자동 등록
+- **채팅창**: "8월 5일 15시에 논문 미팅"처럼 입력하면 Gemini가 날짜/시간/제목을 파싱해 자동 등록
 - **주간 캘린더**: 7일 그리드 + 주간 TODO + 주간 목표
 - **일일 플래너**(모트모트 스타일): 오전/오후/퇴근 후 루틴 체크리스트, 오늘 TODO, 오늘 일정, 일기
 - **분기·연도 목표**: 분기별/연도별 목표와 TODO 관리
@@ -23,10 +23,10 @@
 3. **Authentication > Providers > Email**에서 "Confirm email"을 꺼두면 가입 즉시 로그인 가능 (1인용 개인 앱이라 편의상 추천)
 4. **Settings > API**에서 `Project URL`과 `anon public` 키를 복사
 
-### 2. OpenAI API 키 발급
+### 2. Gemini API 키 발급
 
-[platform.openai.com/api-keys](https://platform.openai.com/api-keys)에서 "Create new secret key"로 API 키를 발급받습니다.
-(채팅 일정 파싱 기능에 사용, 사용량 기반 과금 — Settings > Billing에서 결제 수단 등록 필요)
+[aistudio.google.com/apikey](https://aistudio.google.com/apikey)에서 API 키를 발급받습니다.
+(채팅 일정 파싱 기능에 사용. 무료 티어가 있고, 초과 사용량은 과금됩니다)
 
 ### 3. 환경변수 설정
 
@@ -39,8 +39,8 @@ cp .env.local.example .env.local
 ```
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-OPENAI_API_KEY=...
-OPENAI_MODEL=gpt-4o-mini
+GEMINI_API_KEY=...
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
 ### 4. 로컬 실행
@@ -81,7 +81,7 @@ PC와 동일한 Supabase 계정으로 데이터가 동기화돼요.
 ## 기술 스택
 
 Next.js (App Router) · TypeScript · Tailwind CSS v4 · Supabase (Postgres/Auth/Storage) ·
-OpenAI API (`gpt-4o-mini`, function-calling 기반 일정 파싱) · PWA (manifest + service worker)
+Google Gemini API (`gemini-2.5-flash`, function-calling 기반 일정 파싱) · PWA (manifest + service worker)
 
 ## 프로젝트 구조
 
@@ -103,6 +103,6 @@ scripts/                 PC 자동 실행 바로가기 등록/제거 스크립�
 
 ## Phase 2 로드맵
 
-- 채팅에 PDF 첨부 시 GPT로 요약 → 일정 팝업에서 요약 확인
+- 채팅에 PDF 첨부 시 Gemini로 요약 → 일정 팝업에서 요약 확인
 - D-day 전용 위젯
 - Web Push 기반 실시간 알림
