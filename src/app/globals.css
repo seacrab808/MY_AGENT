@@ -1,26 +1,100 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --pixel-bg: #eaf1ff;
+  --pixel-panel: #fffaf3;
+  --pixel-ink: #2b2f5e;
+  --pixel-ink-soft: #6b6f9a;
+  --pixel-border: #2b2f5e;
+
+  --pixel-blue: #8fb4ff;
+  --pixel-pink: #ffb8d1;
+  --pixel-yellow: #ffdb85;
+  --pixel-mint: #a8ebc9;
+  --pixel-purple: #d2b8ff;
+  --pixel-red: #ff8a8a;
+
+  --pixel-sky-top: #b9d4ff;
+  --pixel-sky-bottom: #ecdcff;
+
+  /* flat pixel drop-shadow (hard edge, no blur) */
+  --pixel-shadow: 4px 4px 0 0 var(--pixel-border);
+  --pixel-shadow-sm: 2px 2px 0 0 var(--pixel-border);
+  --pixel-shadow-lg: 6px 6px 0 0 var(--pixel-border);
+
+  /* chunky "game button" bevel: light inset top-left, dark inset bottom-right, hard outer shadow */
+  --pixel-bevel: inset 2px 2px 0 0 rgba(255, 255, 255, 0.65), inset -3px -3px 0 0 rgba(0, 0, 0, 0.16),
+    3px 3px 0 0 var(--pixel-border);
+  --pixel-bevel-active: inset 2px 2px 0 0 rgba(0, 0, 0, 0.16), inset -1px -1px 0 0 rgba(255, 255, 255, 0.4),
+    1px 1px 0 0 var(--pixel-border);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-pixel-bg: var(--pixel-bg);
+  --color-pixel-panel: var(--pixel-panel);
+  --color-pixel-ink: var(--pixel-ink);
+  --color-pixel-ink-soft: var(--pixel-ink-soft);
+  --color-pixel-border: var(--pixel-border);
+  --color-pixel-blue: var(--pixel-blue);
+  --color-pixel-pink: var(--pixel-pink);
+  --color-pixel-yellow: var(--pixel-yellow);
+  --color-pixel-mint: var(--pixel-mint);
+  --color-pixel-purple: var(--pixel-purple);
+  --color-pixel-red: var(--pixel-red);
+
+  --font-pixel: var(--font-press-start);
+  --font-cute: var(--font-gaegu);
+  --font-body: var(--font-noto-kr);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --pixel-bg: #1c1c30;
+    --pixel-panel: #262640;
+    --pixel-ink: #f0eeff;
+    --pixel-ink-soft: #b3aed1;
+    --pixel-border: #100f22;
+    --pixel-sky-top: #2a2a52;
+    --pixel-sky-bottom: #3c2c55;
   }
 }
 
+* {
+  image-rendering: pixelated;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--pixel-bg);
+  background-image:
+    radial-gradient(circle at 4px 4px, rgba(43, 47, 94, 0.08) 1.5px, transparent 0);
+  background-size: 24px 24px;
+  color: var(--pixel-ink);
+  font-family: var(--font-body), sans-serif;
+}
+
+::selection {
+  background: var(--pixel-yellow);
+  color: var(--pixel-ink);
+}
+
+/* thin pixel-style scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--pixel-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--pixel-ink);
+  border: 2px solid var(--pixel-bg);
+}
+
+/* corner "rivet" decoration used by PixelCard / HeroBanner */
+.pixel-rivet {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  background: var(--pixel-border);
+  opacity: 0.55;
 }
