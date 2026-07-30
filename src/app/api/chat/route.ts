@@ -79,7 +79,11 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (err) {
-    console.error(err);
+    // Log status/message explicitly: Gemini SDK errors often stringify to "[object Object]"
+    // under plain console.error(err), which hides the actual cause (quota, retired model, etc.)
+    const status = (err as { status?: number })?.status;
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("Gemini generateContent failed", { status, message, model: GEMINI_MODEL });
     return NextResponse.json({ error: "AI 호출에 실패했어요. 잠시 후 다시 시도해주세요." }, { status: 502 });
   }
 

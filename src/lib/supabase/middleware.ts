@@ -35,6 +35,14 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isAuthRoute = request.nextUrl.pathname.startsWith("/login");
+  const isApiRoute = request.nextUrl.pathname.startsWith("/api");
+
+  // API routes return their own 401 JSON instead of a redirect; they still need the
+  // getUser() call above to run so an expired access token gets refreshed and the new
+  // cookies land on `response` before the route handler reads them.
+  if (isApiRoute) {
+    return response;
+  }
 
   if (!user && !isAuthRoute) {
     const url = request.nextUrl.clone();
