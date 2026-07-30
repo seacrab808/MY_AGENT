@@ -7,6 +7,58 @@ _Last updated: 2026-07-30_
 
 ## Tried
 
+- **Fixed the daily planner's date header not centering (real root cause found, not a CSS tweak),
+  restyled the last remaining old-"pixel-game"-style buttons in the vocab tab, and matched 이번 주 목표's
+  style to 이번주 TODO's**:
+  - **Root cause of the date-header centering bug**: `DailyPlannerTab.tsx`'s date-nav row was
+    `<PixelCard className="grid grid-cols-[auto_1fr_auto] items-center gap-2">`. `PixelCard.tsx` deliberately
+    applies its `className` prop to *both* the outer frame div and the inner body div (a comment already in
+    that file explains this is intentional, so callers elsewhere can reach the actual content container with
+    e.g. `flex`/`h-full`) — but that means the outer frame *also* became a 3-column grid here, and since the
+    outer frame has only one actual child (the inner body div wrapping everything), that single child just
+    collapsed into the grid's first `auto` track instead of spanning/stretching across all three, leaving the
+    middle `1fr` track empty and shoving the whole header block against the left edge — exactly the
+    "`<` icon hugging the text, big gap after `>`" look in the user's screenshot, not a simple missing
+    `justify-center`. Confirmed this theory with an isolated static-HTML repro (side-by-side "bug" vs "fix"
+    grid nesting, screenshotted via `npx playwright screenshot`) before touching the real component, since the
+    user had already tried (and been frustrated by) surface-level flex/justify-center fixes not working — this
+    was never a missing centering class, it was a structural nesting bug. **Fix**: switched to `bodyClassName`
+    (a prop `PixelCard` already exposes for exactly this — body-only styling that shouldn't leak to the outer
+    frame) instead of `className`, so only the actual body div (containing the real `<`/date-text/`>` children)
+    becomes the 3-column grid, which centers correctly. Grepped the rest of the codebase for the same
+    `<PixelCard className="...grid...">` pattern — this was the only occurrence, so no other tab has the same
+    latent bug.
+  - **`VocabWordManager.tsx`'s per-word ★/▲/X action buttons and `FlipCard.tsx`'s ★/▲ corner buttons were
+    still on the old pre-redesign pixel-game button style** (`font-pixel` blocky font, hard-edged
+    `rounded-[6px]` squares, `active:translate-x/y-[1px]` press effect) — every *other* small action button in
+    the app (e.g. `TodoList.tsx`'s/`GoalList.tsx`'s delete button) had already migrated to the soft style
+    (`font-cute font-bold`, `rounded-full`, `active:scale-95`) in an earlier redesign pass, these two files were
+    just missed. Restyled both to match exactly; also bumped `VocabWordManager`'s word-row radius
+    `rounded-[8px]`→`rounded-[10px]` and `FlipCard`'s card-face border `border-[3px]`→`border-2` +
+    `--pixel-bevel`→`--pixel-shadow` to match the rest of the app's 2px-border/soft-shadow convention (both were
+    still using the pre-redesign thicker border/bevel-shadow tokens).
+  - **`WeeklyTab.tsx`'s "이번 주 목표" (`GoalList.tsx`) now matches "이번주 TODO" (`TodoList.tsx`)'s styling** —
+    `GoalList` was still using a bare native `<input type="checkbox">` (no themed checkbox at all) and the same
+    old pixel-style delete button described above. Swapped the checkbox for `PixelCheckbox` (`tone="purple"`,
+    matching the section's existing purple "추가" button accent) and the delete button for the same
+    `font-cute`/`rounded-full`/`active:scale-95` treatment as `TodoList`'s, plus matched the list-item radius
+    (`rounded-[8px]`→`rounded-[10px]`). Deliberately did **not** add a `ProgressBar` to `GoalList` even though
+    `TodoList` has an opt-in one — checked that `WeeklyTab`'s own `<TodoList ... />` call doesn't pass
+    `showProgress` either, so "이번주 TODO" itself has no progress bar right now; matching its *actual current
+    look* (checkbox/delete-button/radius), not adding a feature it doesn't have. This same `GoalList` is also
+    used by `GoalsTab.tsx` (quarter/year goals), which gets this same visual upgrade for free since it's the
+    one shared component — not scoped to weekly only, but that's the correct/intended blast radius (same as
+    how `TodoList`'s soft-style migration reached every scope automatically).
+  - Also gave the weekly calendar's per-day "+" add-event button and event chips a pass — the "+" was a bare
+    unstyled text glyph (no border/background at all, inconsistent with every other small icon-button in the
+    app), turned into a small round pixel-bordered button matching the rest of the app's icon-button
+    treatment; event chip radius bumped `rounded-[6px]`→`rounded-[8px]` to match the slightly-rounder
+    convention used elsewhere (e.g. the monthly calendar's own event chips/bars).
+  - `npx tsc --noEmit`, `npm run lint`, `npm run build` all pass clean. The date-header centering fix was
+    additionally verified with the standalone HTML/CSS repro above (screenshotted, not just reasoned about) —
+    everything else in this batch (vocab button restyle, weekly goal-list restyle, weekly +/chip tweaks) was
+    build/lint-checked only, not eyeballed in the actual logged-in app (no credentials in this environment).
+
 - **Fixed the background gradient "seam" on scroll, gave light mode its own spring-themed gradient (it had
   none before), and made the twinkling dots look like glowing neon instead of flat dots**, all in
   `globals.css`/`layout.tsx`:

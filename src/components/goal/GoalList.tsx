@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { Goal, GoalScope } from "@/types/todo";
 import { PixelInput } from "@/components/ui/PixelInput";
 import { PixelButton } from "@/components/ui/PixelButton";
+import { PixelCheckbox } from "@/components/ui/PixelCheckbox";
 
 interface GoalListProps {
   userId: string;
@@ -86,14 +87,9 @@ export function GoalList({ userId, scope, periodKey }: GoalListProps) {
           {goals.map((goal) => (
             <li
               key={goal.id}
-              className="flex items-center gap-2 border-2 border-pixel-border rounded-[8px] px-2.5 py-1.5 bg-pixel-bg"
+              className="flex items-center gap-2 border-2 border-pixel-border rounded-[10px] px-2.5 py-1.5 bg-pixel-bg"
             >
-              <input
-                type="checkbox"
-                checked={goal.is_done}
-                onChange={() => toggleDone(goal)}
-                className="w-5 h-5 shrink-0 accent-pixel-purple cursor-pointer"
-              />
+              <PixelCheckbox checked={goal.is_done} onChange={() => toggleDone(goal)} tone="purple" />
               <span
                 className={`flex-1 min-w-0 font-body text-sm break-words ${
                   goal.is_done ? "line-through text-pixel-ink-soft" : ""
@@ -104,7 +100,7 @@ export function GoalList({ userId, scope, periodKey }: GoalListProps) {
               <button
                 onClick={() => remove(goal)}
                 aria-label="삭제"
-                className="font-pixel text-[10px] min-w-[36px] min-h-[36px] flex items-center justify-center shrink-0 border-2 border-pixel-border rounded-[6px] bg-pixel-red text-pixel-bg shadow-[var(--pixel-shadow-sm)] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer"
+                className="font-cute text-xs font-bold min-w-[32px] min-h-[32px] flex items-center justify-center shrink-0 border-2 border-pixel-border rounded-full bg-pixel-red text-pixel-bg shadow-[var(--pixel-shadow-sm)] active:scale-95 cursor-pointer transition-transform"
               >
                 X
               </button>

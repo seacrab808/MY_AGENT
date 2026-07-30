@@ -65,7 +65,7 @@ export function WeeklyTab({ userId }: WeeklyTabProps) {
                   <button
                     type="button"
                     onClick={() => setAddingDateKey(dateKey)}
-                    className="font-cute text-xs text-pixel-ink-soft cursor-pointer leading-none px-1"
+                    className="font-cute text-xs font-bold w-5 h-5 flex items-center justify-center shrink-0 border-2 border-pixel-border rounded-full bg-pixel-panel text-pixel-ink-soft cursor-pointer active:scale-95 transition-transform"
                     aria-label="일정 추가"
                   >
                     +
@@ -80,7 +80,7 @@ export function WeeklyTab({ userId }: WeeklyTabProps) {
                       key={event.id}
                       type="button"
                       onClick={() => setSelectedEvent(event)}
-                      className="inline-block font-body text-sm leading-snug px-2 py-1 border-2 border-pixel-border rounded-[6px] w-fit text-left cursor-pointer hover:-translate-y-0.5 transition-transform"
+                      className="inline-block font-body text-sm leading-snug px-2 py-1 border-2 border-pixel-border rounded-[8px] w-fit text-left cursor-pointer hover:-translate-y-0.5 transition-transform"
                       style={{ backgroundColor: eventColor(event), color: "var(--pixel-chip-ink)" }}
                     >
                       {event.event_time ? `${event.event_time.slice(0, 5)} ` : ""}

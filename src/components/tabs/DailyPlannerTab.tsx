@@ -74,7 +74,11 @@ export function DailyPlannerTab({ userId }: DailyPlannerTabProps) {
         <p className="font-body text-sm text-pixel-ink-soft">🐾 하루를 이쁘게 채워봐요</p>
       </div>
 
-      <PixelCard className="grid grid-cols-[auto_1fr_auto] items-center gap-2">
+      {/* 이 grid 레이아웃은 반드시 bodyClassName으로 줘야 함 — PixelCard의 className은 바깥 프레임과
+          안쪽 body div에 둘 다 적용되는데(다른 곳의 h-full/flex 트릭 때문에 의도된 동작), 여기서
+          className으로 grid를 주면 바깥쪽도 3열 grid가 되면서 안쪽 body div 하나가 그 grid의 첫
+          칸(auto)에만 들어가 버려서 내용이 왼쪽으로 쏠리고 중앙 1fr 칸은 빈 채로 남아 정렬이 깨짐 */}
+      <PixelCard bodyClassName="grid grid-cols-[auto_1fr_auto] items-center gap-2">
         <PixelIconButton onClick={() => setDate((d) => subDays(d, 1))} className="shrink-0">
           {"<"}
         </PixelIconButton>

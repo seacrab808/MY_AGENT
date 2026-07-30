@@ -240,7 +240,7 @@ export function VocabWordManager({
           {visibleWords.map((word) => (
             <li
               key={word.id}
-              className={`flex items-center gap-2 border-2 border-pixel-border rounded-[8px] px-2.5 py-1.5 ${
+              className={`flex items-center gap-2 border-2 border-pixel-border rounded-[10px] px-2.5 py-1.5 ${
                 word.is_starred ? "bg-pixel-yellow text-pixel-chip-ink" : "bg-pixel-bg"
               }`}
             >
@@ -251,8 +251,8 @@ export function VocabWordManager({
               <button
                 onClick={() => onToggleStarred(word)}
                 title="별표 (어려운 단어)"
-                className={`font-pixel text-[10px] min-w-[36px] min-h-[36px] flex items-center justify-center shrink-0 border-2 border-pixel-border rounded-[6px] shadow-[var(--pixel-shadow-sm)] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer ${
-                  word.is_starred ? "bg-pixel-red text-pixel-bg" : "bg-pixel-panel"
+                className={`font-cute text-xs font-bold min-w-[32px] min-h-[32px] flex items-center justify-center shrink-0 border-2 border-pixel-border rounded-full shadow-[var(--pixel-shadow-sm)] active:scale-95 cursor-pointer transition-transform ${
+                  word.is_starred ? "bg-pixel-yellow text-pixel-chip-ink" : "bg-pixel-panel"
                 }`}
               >
                 ★
@@ -260,7 +260,7 @@ export function VocabWordManager({
               <button
                 onClick={() => onToggleTriangled(word)}
                 title="세모 (이제 잘 아는 단어)"
-                className={`font-pixel text-[10px] min-w-[36px] min-h-[36px] flex items-center justify-center shrink-0 border-2 border-pixel-border rounded-[6px] shadow-[var(--pixel-shadow-sm)] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer ${
+                className={`font-cute text-xs font-bold min-w-[32px] min-h-[32px] flex items-center justify-center shrink-0 border-2 border-pixel-border rounded-full shadow-[var(--pixel-shadow-sm)] active:scale-95 cursor-pointer transition-transform ${
                   word.is_triangled ? "bg-pixel-mint text-pixel-chip-ink" : "bg-pixel-panel"
                 }`}
               >
@@ -269,7 +269,7 @@ export function VocabWordManager({
               <button
                 onClick={() => onRemove(word)}
                 aria-label="삭제"
-                className="font-pixel text-[10px] min-w-[36px] min-h-[36px] flex items-center justify-center shrink-0 border-2 border-pixel-border rounded-[6px] bg-pixel-red text-pixel-bg shadow-[var(--pixel-shadow-sm)] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer"
+                className="font-cute text-xs font-bold min-w-[32px] min-h-[32px] flex items-center justify-center shrink-0 border-2 border-pixel-border rounded-full bg-pixel-red text-pixel-bg shadow-[var(--pixel-shadow-sm)] active:scale-95 cursor-pointer transition-transform"
               >
                 X
               </button>
