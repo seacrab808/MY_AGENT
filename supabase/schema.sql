@@ -8,13 +8,24 @@ create table if not exists public.events (
   user_id uuid not null references auth.users(id) on delete cascade,
   title text not null,
   event_date date not null,
+  event_end_date date, -- 여행처럼 여러 날에 걸친 일정의 마지막 날짜. 단일 날짜 일정이면 null.
   event_time time,
+  end_time time, -- 명시적 종료 시간(없으면 기본 duration 적용: 일반 1시간 / meeting 2시간)
   description text,
   category text not null default 'general', -- general | dday | exam | meeting ...
+  color text, -- 사용자가 고른 파스텔 hex color. null이면 category 기본색 사용
+  visibility text not null default 'month', -- month | week | day. 월간/주간/일간 중 어디까지 노출할지(하위 단계엔 항상 노출)
   created_at timestamptz not null default now()
 );
 
+-- 기존 테이블에 이미 events가 있는 경우를 위한 안전한 컬럼 추가
+alter table public.events add column if not exists event_end_date date;
+alter table public.events add column if not exists end_time time;
+alter table public.events add column if not exists color text;
+alter table public.events add column if not exists visibility text not null default 'month';
+
 create index if not exists events_user_date_idx on public.events (user_id, event_date);
+create index if not exists events_user_end_date_idx on public.events (user_id, event_end_date);
 
 alter table public.events enable row level security;
 

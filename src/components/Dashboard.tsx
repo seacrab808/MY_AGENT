@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { endOfMonth, endOfWeek, format, startOfMonth, startOfWeek } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
-import { fetchEventsForRange, groupEventsByDate } from "@/lib/events";
+import { eventDateKeys, fetchEventsForRange, filterEventsForTab, groupEventsByDate } from "@/lib/events";
 import { toDateKey, todayIsMonday, currentWeekRange, KOREAN_WEEKDAY } from "@/lib/date";
 import type { PlannerEvent } from "@/types/event";
 import type { TabKey } from "@/lib/tabs";
@@ -57,14 +57,18 @@ export function Dashboard({ userId, userEmail, initialEvents, initialMonth }: Da
     fetchEventsForRange(supabase, start, end).then(setWeekEvents);
   }, [today]);
 
+  const weekRange = currentWeekRange(today);
+
   function handleEventCreated(event: PlannerEvent) {
     setEvents((prev) => [...prev, event]);
-    if (event.event_date === todayKey) {
+
+    const dateKeys = eventDateKeys(event);
+    const overlapsWeek = dateKeys.some((k) => k >= weekRange.start && k <= weekRange.end);
+    const isWeekVisible = filterEventsForTab([event], "week").length > 0;
+    if (overlapsWeek && isWeekVisible) {
       setWeekEvents((prev) => [...prev, event]);
     }
   }
-
-  const weekRange = currentWeekRange(today);
 
   return (
     <div className="flex flex-col flex-1 max-w-7xl w-full mx-auto p-4 gap-4">
@@ -94,9 +98,11 @@ export function Dashboard({ userId, userEmail, initialEvents, initialMonth }: Da
               userId={userId}
               monthDate={monthDate}
               onMonthChange={setMonthDate}
+              events={events}
               eventsByDate={eventsByDate}
               selectedDateKey={selectedDateKey}
               onSelectDate={setSelectedDateKey}
+              onEventCreated={handleEventCreated}
             />
           )}
           {activeTab === "chat" && <ChatTab onEventCreated={handleEventCreated} />}

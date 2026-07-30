@@ -7,7 +7,9 @@ import { fetchEventsForRange } from "@/lib/events";
 import { toDateKey, KOREAN_WEEKDAY } from "@/lib/date";
 import { PixelCard } from "@/components/ui/PixelCard";
 import { PixelIconButton } from "@/components/ui/PixelIconButton";
+import { PixelButton } from "@/components/ui/PixelButton";
 import { EventList } from "@/components/calendar/EventList";
+import { AddEventModal } from "@/components/calendar/AddEventModal";
 import { TodoList } from "@/components/todo/TodoList";
 import { RoutineChecklist } from "@/components/routine/RoutineChecklist";
 import { DiaryBox } from "@/components/routine/DiaryBox";
@@ -20,6 +22,7 @@ interface DailyPlannerTabProps {
 export function DailyPlannerTab({ userId }: DailyPlannerTabProps) {
   const [date, setDate] = useState(() => new Date());
   const [events, setEvents] = useState<PlannerEvent[]>([]);
+  const [adding, setAdding] = useState(false);
   const dateKey = toDateKey(date);
 
   useEffect(() => {
@@ -66,9 +69,23 @@ export function DailyPlannerTab({ userId }: DailyPlannerTabProps) {
       </div>
 
       <PixelCard>
-        <h3 className="font-cute text-xl mb-2">📌 오늘의 일정</h3>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-cute text-xl">📌 오늘의 일정</h3>
+          <PixelButton type="button" className="text-sm px-3 py-1.5" onClick={() => setAdding(true)}>
+            + 추가
+          </PixelButton>
+        </div>
         <EventList events={events} />
       </PixelCard>
+
+      <AddEventModal
+        open={adding}
+        onClose={() => setAdding(false)}
+        userId={userId}
+        dateKey={dateKey}
+        visibility="day"
+        onCreated={(event) => setEvents((prev) => [...prev, event])}
+      />
 
       <PixelCard>
         <DiaryBox userId={userId} dateKey={dateKey} />

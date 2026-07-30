@@ -11,25 +11,29 @@ interface MonthlyTabProps {
   userId: string;
   monthDate: Date;
   onMonthChange: (date: Date) => void;
+  events: PlannerEvent[];
   eventsByDate: Record<string, PlannerEvent[]>;
   selectedDateKey: string | null;
   onSelectDate: (dateKey: string | null) => void;
+  onEventCreated: (event: PlannerEvent) => void;
 }
 
 export function MonthlyTab({
   userId,
   monthDate,
   onMonthChange,
+  events,
   eventsByDate,
   selectedDateKey,
   onSelectDate,
+  onEventCreated,
 }: MonthlyTabProps) {
   return (
     <div className="grid lg:grid-cols-[1.4fr_1fr] gap-4 items-start">
       <MonthCalendar
         monthDate={monthDate}
         onMonthChange={onMonthChange}
-        eventsByDate={eventsByDate}
+        events={events}
         onSelectDate={onSelectDate}
       />
 
@@ -42,6 +46,8 @@ export function MonthlyTab({
         dateKey={selectedDateKey}
         events={selectedDateKey ? eventsByDate[selectedDateKey] ?? [] : []}
         onClose={() => onSelectDate(null)}
+        onEventCreated={onEventCreated}
+        userId={userId}
       />
     </div>
   );
