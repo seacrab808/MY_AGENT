@@ -20,14 +20,9 @@ export function PixelModal({ open, onClose, title, children, emoji }: PixelModal
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto bg-pixel-panel border-[3px] border-pixel-border rounded-[16px] shadow-[6px_6px_0_0_var(--pixel-border)] p-5"
+        className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto bg-pixel-panel border-2 border-pixel-border rounded-[20px] shadow-[var(--pixel-shadow-lg)] p-5"
         onClick={(e) => e.stopPropagation()}
       >
-        <span className="pixel-rivet top-2 left-2 rounded-[1px]" />
-        <span className="pixel-rivet top-2 right-2 rounded-[1px]" />
-        <span className="pixel-rivet bottom-2 left-2 rounded-[1px]" />
-        <span className="pixel-rivet bottom-2 right-2 rounded-[1px]" />
-
         <div className="flex items-start justify-between gap-3 mb-3">
           <h2 className="font-cute text-2xl flex items-center gap-2">
             {emoji && <span>{emoji}</span>}

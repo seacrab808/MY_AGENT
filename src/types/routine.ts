@@ -15,7 +15,16 @@ export interface DiaryEntry {
   user_id: string;
   entry_date: string;
   content: string;
+  mood: string | null;
   created_at: string;
+  updated_at: string;
+}
+
+export interface Retrospective {
+  id: string;
+  user_id: string;
+  period_key: string; // monthKey() 형식, 'yyyy-MM'
+  content: string;
   updated_at: string;
 }
 

@@ -177,9 +177,9 @@ export function MonthCalendar({ monthDate, onMonthChange, events, onSelectDate }
                     <button
                       key={dateKey}
                       onClick={() => onSelectDate(dateKey)}
-                      className={`min-h-[76px] sm:min-h-[92px] flex flex-col items-center justify-start p-1 rounded-[8px] border-2 cursor-pointer transition-transform overflow-hidden ${
+                      className={`min-h-[76px] sm:min-h-[92px] flex flex-col items-center justify-start p-1 rounded-[10px] border-2 cursor-pointer transition-transform overflow-hidden ${
                         todayFlag
-                          ? "border-pixel-border bg-gradient-to-b from-[#ffedb0] to-pixel-yellow shadow-[var(--pixel-bevel)] text-pixel-chip-ink"
+                          ? "border-pixel-purple bg-gradient-to-b from-[#f6dcee] to-pixel-pink shadow-[var(--pixel-shadow-sm)] text-pixel-chip-ink"
                           : "border-transparent hover:border-pixel-border hover:-translate-y-0.5"
                       } ${!inMonth ? "opacity-35" : ""}`}
                       style={{ paddingBottom: laneCount * (BAR_ROW_HEIGHT + BAR_ROW_GAP) + 4 }}

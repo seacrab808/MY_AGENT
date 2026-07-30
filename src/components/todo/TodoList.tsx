@@ -5,15 +5,19 @@ import { createClient } from "@/lib/supabase/client";
 import type { Todo, TodoScope } from "@/types/todo";
 import { PixelInput } from "@/components/ui/PixelInput";
 import { PixelButton } from "@/components/ui/PixelButton";
+import { PixelCheckbox } from "@/components/ui/PixelCheckbox";
+import { ProgressBar } from "@/components/ui/ProgressBar";
 
 interface TodoListProps {
   userId: string;
   scope: TodoScope;
   periodKey: string;
   emptyLabel?: string;
+  /** 진행률 바 표시 여부 (오늘의 TODO / 이달의 TODO에서 켜짐, 분기·연간 TODO는 기본 꺼짐) */
+  showProgress?: boolean;
 }
 
-export function TodoList({ userId, scope, periodKey, emptyLabel }: TodoListProps) {
+export function TodoList({ userId, scope, periodKey, emptyLabel, showProgress = false }: TodoListProps) {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
@@ -64,8 +68,12 @@ export function TodoList({ userId, scope, periodKey, emptyLabel }: TodoListProps
     await supabase.from("todos").delete().eq("id", todo.id);
   }
 
+  const doneCount = todos.filter((t) => t.is_done).length;
+
   return (
     <div className="flex flex-col gap-2">
+      {showProgress && !loading && <ProgressBar done={doneCount} total={todos.length} />}
+
       <form onSubmit={handleAdd} className="flex gap-2">
         <PixelInput
           className="flex-1"
@@ -89,14 +97,9 @@ export function TodoList({ userId, scope, periodKey, emptyLabel }: TodoListProps
           {todos.map((todo) => (
             <li
               key={todo.id}
-              className="flex items-center gap-2 border-2 border-pixel-border rounded-[8px] px-2.5 py-1.5 bg-pixel-bg"
+              className="flex items-center gap-2 border-2 border-pixel-border rounded-[10px] px-2.5 py-1.5 bg-pixel-bg"
             >
-              <input
-                type="checkbox"
-                checked={todo.is_done}
-                onChange={() => toggleDone(todo)}
-                className="w-5 h-5 shrink-0 accent-pixel-blue cursor-pointer"
-              />
+              <PixelCheckbox checked={todo.is_done} onChange={() => toggleDone(todo)} tone="blue" />
               <span
                 className={`flex-1 min-w-0 font-body text-sm break-words ${
                   todo.is_done ? "line-through text-pixel-ink-soft" : ""
@@ -107,7 +110,7 @@ export function TodoList({ userId, scope, periodKey, emptyLabel }: TodoListProps
               <button
                 onClick={() => remove(todo)}
                 aria-label="삭제"
-                className="font-pixel text-[10px] min-w-[36px] min-h-[36px] flex items-center justify-center shrink-0 border-2 border-pixel-border rounded-[6px] bg-pixel-red text-pixel-bg shadow-[var(--pixel-shadow-sm)] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer"
+                className="font-cute text-xs font-bold min-w-[32px] min-h-[32px] flex items-center justify-center shrink-0 border-2 border-pixel-border rounded-full bg-pixel-red text-pixel-bg shadow-[var(--pixel-shadow-sm)] active:scale-95 cursor-pointer transition-transform"
               >
                 X
               </button>

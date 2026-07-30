@@ -11,10 +11,21 @@ const titleBarTone: Record<Tone, string> = {
   red: "bg-pixel-red text-pixel-chip-ink",
 };
 
+const tapeTone: Record<Tone, string> = {
+  blue: "bg-pixel-blue",
+  pink: "bg-pixel-pink",
+  yellow: "bg-pixel-yellow",
+  mint: "bg-pixel-mint",
+  purple: "bg-pixel-purple",
+  red: "bg-pixel-red",
+};
+
 interface PixelCardProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   heading?: ReactNode;
   tone?: Tone;
   bodyClassName?: string;
+  /** 카드 우상단에 붙이는 작은 마스킹테이프 장식(washi tape). 지정한 톤 색으로 렌더링됨. */
+  tape?: Tone;
 }
 
 export function PixelCard({
@@ -22,22 +33,20 @@ export function PixelCard({
   bodyClassName = "",
   heading,
   tone = "blue",
+  tape,
   children,
   ...rest
 }: PixelCardProps) {
   return (
     <div
-      className={`relative bg-pixel-panel border-[3px] border-pixel-border rounded-[14px] shadow-[var(--pixel-shadow-lg)] overflow-hidden ${className}`}
+      className={`relative bg-pixel-panel border-2 border-pixel-border rounded-[18px] shadow-[var(--pixel-shadow-lg)] overflow-hidden ${className}`}
       {...rest}
     >
-      <span className="pixel-rivet top-1 left-1 rounded-[1px]" />
-      <span className="pixel-rivet top-1 right-1 rounded-[1px]" />
-      <span className="pixel-rivet bottom-1 left-1 rounded-[1px]" />
-      <span className="pixel-rivet bottom-1 right-1 rounded-[1px]" />
+      {tape && <span className={`washi-tape ${tapeTone[tape]}`} aria-hidden />}
 
       {heading && (
         <div
-          className={`font-cute text-xl px-4 py-2 border-b-[3px] border-pixel-border ${titleBarTone[tone]}`}
+          className={`font-cute text-xl px-4 py-2 border-b-2 border-pixel-border ${titleBarTone[tone]}`}
         >
           {heading}
         </div>

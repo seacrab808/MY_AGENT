@@ -1,34 +1,36 @@
 @import "tailwindcss";
 
 :root {
-  --pixel-bg: #eaf1ff;
-  --pixel-panel: #fffaf3;
-  --pixel-ink: #2b2f5e;
-  --pixel-ink-soft: #6b6f9a;
-  --pixel-border: #2b2f5e;
+  --pixel-bg: #fbf3ea;
+  --pixel-panel: #fffdf9;
+  --pixel-ink: #5b4a56;
+  --pixel-ink-soft: #a4909f;
+  --pixel-border: #f0e3d4;
   /* 파스텔 배경칩(연속 일정 막대/뱃지) 전용 글자색. 다크모드에서도 밝아지지 않게 고정 */
-  --pixel-chip-ink: #33344a;
+  --pixel-chip-ink: #4a3b45;
 
-  --pixel-blue: #8fb4ff;
-  --pixel-pink: #ffb8d1;
-  --pixel-yellow: #ffdb85;
-  --pixel-mint: #a8ebc9;
-  --pixel-purple: #d2b8ff;
-  --pixel-red: #ff8a8a;
+  --pixel-blue: #a3c7ff;
+  --pixel-pink: #ffb3d1;
+  --pixel-yellow: #ffd873;
+  --pixel-mint: #9fe3c1;
+  --pixel-purple: #c6aeff;
+  --pixel-red: #ff9c9c;
 
-  --pixel-sky-top: #b9d4ff;
-  --pixel-sky-bottom: #ecdcff;
+  --pixel-sky-top: #d3e2ff;
+  --pixel-sky-bottom: #ffddec;
 
-  /* flat pixel drop-shadow (hard edge, no blur) */
-  --pixel-shadow: 4px 4px 0 0 var(--pixel-border);
-  --pixel-shadow-sm: 2px 2px 0 0 var(--pixel-border);
-  --pixel-shadow-lg: 6px 6px 0 0 var(--pixel-border);
+  /* 보라 -> 핑크 그라데이션. progress bar(오늘의 Routine/TODO/일정, 이달의 TODO)에서 공용으로 사용 */
+  --gradient-cheer: linear-gradient(90deg, #b79cf0, #f7a8c9);
 
-  /* chunky "game button" bevel: light inset top-left, dark inset bottom-right, hard outer shadow */
-  --pixel-bevel: inset 2px 2px 0 0 rgba(255, 255, 255, 0.65), inset -3px -3px 0 0 rgba(0, 0, 0, 0.16),
-    3px 3px 0 0 var(--pixel-border);
-  --pixel-bevel-active: inset 2px 2px 0 0 rgba(0, 0, 0, 0.16), inset -1px -1px 0 0 rgba(255, 255, 255, 0.4),
-    1px 1px 0 0 var(--pixel-border);
+  /* 부드러운 종이 질감 느낌의 그림자 (기존의 딱딱한 flat pixel shadow를 대체) */
+  --pixel-shadow: 0 6px 16px rgba(120, 90, 70, 0.14);
+  --pixel-shadow-sm: 0 3px 8px rgba(120, 90, 70, 0.12);
+  --pixel-shadow-lg: 0 10px 26px rgba(120, 90, 70, 0.16);
+
+  /* 카드/버튼의 "떠 있는" 느낌(resting) vs "눌린/선택된" 느낌(active) — 이제 3D 베젤이 아니라
+     그냥 그림자 깊이 차이로만 표현 (기존 이름은 유지해서 이 변수를 쓰는 곳들이 자동으로 부드러워짐) */
+  --pixel-bevel: 0 4px 12px rgba(120, 90, 70, 0.14);
+  --pixel-bevel-active: inset 0 2px 4px rgba(120, 90, 70, 0.14);
 }
 
 @theme inline {
@@ -53,18 +55,14 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --pixel-bg: #1c1c30;
-    --pixel-panel: #262640;
-    --pixel-ink: #f0eeff;
-    --pixel-ink-soft: #b3aed1;
-    --pixel-border: #100f22;
-    --pixel-sky-top: #2a2a52;
-    --pixel-sky-bottom: #3c2c55;
+    --pixel-bg: #211c26;
+    --pixel-panel: #2c2530;
+    --pixel-ink: #f3ecf5;
+    --pixel-ink-soft: #c2aec0;
+    --pixel-border: #3a2f3d;
+    --pixel-sky-top: #322a4a;
+    --pixel-sky-bottom: #47304a;
   }
-}
-
-* {
-  image-rendering: pixelated;
 }
 
 html {
@@ -73,9 +71,6 @@ html {
 
 body {
   background-color: var(--pixel-bg);
-  background-image:
-    radial-gradient(circle at 4px 4px, rgba(43, 47, 94, 0.08) 1.5px, transparent 0);
-  background-size: 24px 24px;
   color: var(--pixel-ink);
   font-family: var(--font-body), sans-serif;
   overflow-x: hidden;
@@ -87,7 +82,7 @@ body {
   color: var(--pixel-ink);
 }
 
-/* thin pixel-style scrollbar */
+/* thin, rounded scrollbar to match the softer theme */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -96,15 +91,20 @@ body {
   background: var(--pixel-bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--pixel-ink);
+  background: var(--pixel-ink-soft);
   border: 2px solid var(--pixel-bg);
+  border-radius: 6px;
 }
 
-/* corner "rivet" decoration used by PixelCard / HeroBanner */
-.pixel-rivet {
+/* 카드 모서리에 붙이는 작은 마스킹테이프 장식 (washi tape 느낌 근사치) */
+.washi-tape {
   position: absolute;
-  width: 7px;
-  height: 7px;
-  background: var(--pixel-border);
-  opacity: 0.55;
+  top: -6px;
+  right: 14px;
+  width: 52px;
+  height: 18px;
+  opacity: 0.85;
+  transform: rotate(4deg);
+  border-radius: 2px;
+  box-shadow: 0 2px 4px rgba(120, 90, 70, 0.18);
 }

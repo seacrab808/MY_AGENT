@@ -12,18 +12,18 @@ const CLOUD =
 
 export function HeroBanner({ title, subtitle, right }: HeroBannerProps) {
   return (
-    <div className="relative overflow-hidden rounded-[16px] border-[3px] border-pixel-border shadow-[var(--pixel-shadow-lg)] bg-gradient-to-b from-[var(--pixel-sky-top)] to-[var(--pixel-sky-bottom)] px-5 py-4">
+    <div className="relative overflow-hidden rounded-[20px] border-2 border-pixel-border shadow-[var(--pixel-shadow-lg)] bg-gradient-to-b from-[var(--pixel-sky-top)] to-[var(--pixel-sky-bottom)] px-5 py-4">
       <span className={`absolute w-1 h-1 bg-white/0 top-6 left-10 opacity-70 ${CLOUD}`} />
       <span className={`absolute w-1 h-1 bg-white/0 top-4 right-24 opacity-60 ${CLOUD}`} />
       <span className={`absolute w-1 h-1 bg-white/0 bottom-3 left-1/3 opacity-50 ${CLOUD}`} />
 
       <div className="relative flex items-center justify-between gap-3 flex-wrap">
         <div className="min-w-0">
-          <h1 className="font-pixel text-base sm:text-2xl text-pixel-ink break-words [text-shadow:2px_2px_0_#fff]">
+          <h1 className="font-cute text-2xl sm:text-3xl font-bold text-pixel-ink break-words">
             {title}
           </h1>
           {subtitle && (
-            <p className="font-cute text-base text-pixel-ink/80 mt-1 break-words">{subtitle}</p>
+            <p className="font-body text-base text-pixel-ink/80 mt-1 break-words">{subtitle}</p>
           )}
         </div>
         {right && <div className="relative flex items-center gap-2 flex-wrap">{right}</div>}

@@ -28,10 +28,10 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setMode("login")}
-              className={`flex-1 font-cute text-lg py-1.5 rounded-[8px] border-[3px] border-pixel-border cursor-pointer transition-transform ${
+              className={`flex-1 font-cute text-lg py-1.5 rounded-[12px] border-2 border-pixel-border cursor-pointer transition-all ${
                 mode === "login"
                   ? "bg-gradient-to-b from-[#b7cfff] to-pixel-blue shadow-[var(--pixel-bevel-active)] text-pixel-chip-ink"
-                  : "bg-pixel-panel shadow-[var(--pixel-bevel)] hover:-translate-y-0.5"
+                  : "bg-pixel-panel shadow-[var(--pixel-shadow-sm)] hover:-translate-y-0.5"
               }`}
             >
               로그인
@@ -39,10 +39,10 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setMode("signup")}
-              className={`flex-1 font-cute text-lg py-1.5 rounded-[8px] border-[3px] border-pixel-border cursor-pointer transition-transform ${
+              className={`flex-1 font-cute text-lg py-1.5 rounded-[12px] border-2 border-pixel-border cursor-pointer transition-all ${
                 mode === "signup"
                   ? "bg-gradient-to-b from-[#ffd6e6] to-pixel-pink shadow-[var(--pixel-bevel-active)] text-pixel-chip-ink"
-                  : "bg-pixel-panel shadow-[var(--pixel-bevel)] hover:-translate-y-0.5"
+                  : "bg-pixel-panel shadow-[var(--pixel-shadow-sm)] hover:-translate-y-0.5"
               }`}
             >
               회원가입

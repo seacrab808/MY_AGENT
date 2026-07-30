@@ -7,6 +7,78 @@ _Last updated: 2026-07-30_
 
 ## Tried
 
+- **Full visual redesign: "pixel game" → soft pastel/washi-tape diary theme**, plus a Daily Planner/Monthly
+  restructure, per the user's mockups. Confirmed scope with the user first (full app reskin via shared
+  tokens, `HeroBanner` removed and its content moved into a new `Sidebar` profile card, pixel identity fully
+  replaced, logout moved to the sidebar):
+  - **`globals.css` tokens recolored** to a warm cream/pastel palette (`--pixel-bg`/`--pixel-panel`/
+    `--pixel-ink`/`--pixel-border` all retuned; `--pixel-border` now sits close to the panel color so the
+    old hard navy outline effectively disappears app-wide with zero per-component edits). `--pixel-shadow*`
+    and `--pixel-bevel*` were changed from a flat hard-edge drop-shadow/3D-bevel to soft blurred shadows —
+    since `PixelCard`/`PixelButton`/`PixelIconButton`/every "resting vs. active" state across the app
+    references these same variable names, this alone flattened the whole UI without touching those call
+    sites. Added `--gradient-cheer` (purple→pink) for the new progress bars, and a `.washi-tape` CSS class
+    (small rotated colored ribbon) for card corner accents. Removed the dotted-grid `background-image` on
+    `body` and the global `image-rendering: pixelated` rule (both were pixel-art-specific).
+  - **Shared primitives restyled**: `PixelCard` dropped its 4 corner "rivet" dots and gained an optional
+    `tape` prop (renders a `.washi-tape` ribbon in a given tone, used on the daily-planner/monthly cards);
+    `PixelButton`/`PixelIconButton` swapped the inset-bevel + translate-on-press effect for a flat fill +
+    soft shadow + `scale-[0.97]` press; `PixelCheckbox` changed from a square to a circular checkbox
+    (`rounded-full`, new `tone` prop) to match the mockup; `PixelModal` lost its rivets too and its shadow
+    now uses the `--pixel-shadow-lg` var instead of a hardcoded flat shadow. New `src/components/ui/
+    ProgressBar.tsx` (`{ done, total }` → gradient-filled rounded track + "done/total NN%" caption), reused
+    by the routine list, both TODO lists, and today's event list.
+  - **Sidebar restructure** (`src/components/Sidebar.tsx`): gained a profile card at the top (avatar emoji +
+    `{name}의 플래너` + `PIXEL PLANNER` subtitle) and a mascot/greeting/로그아웃 card at the bottom — the
+    `logout` server action now lives inside `Sidebar` itself (imported directly from `@/app/actions`)
+    instead of being passed down from `Dashboard`. Nav item pills restyled to the new pastel active/inactive
+    states. `Dashboard.tsx` no longer renders `HeroBanner` at all; it still computes the random greeting
+    (`pickRandomCheerTemplate`/`fillCheerTemplate`, unchanged logic) but now passes it into `Sidebar` as a
+    `greeting` prop instead of a banner subtitle. `HeroBanner.tsx` itself was kept (not deleted) — restyled
+    to the new soft theme (font-cute title instead of font-pixel, `border-2`, soft shadow) — since it's still
+    used standalone on the logged-out `/login` page.
+  - **Daily Planner restructure** (`src/components/tabs/DailyPlannerTab.tsx`): the old 3 separate 오전/오후/
+    퇴근 후 `RoutineChecklist` cards were merged into one **`src/components/routine/TodayRoutineList.tsx`**
+    ("🔄 오늘의 Routine") that loads all `routines` rows for the date in one query (no `period` filter),
+    keeps the same preset-backfill-on-every-visit logic (now running once across all 3 periods instead of
+    3x), and renders each item with a small period-tag pill (오전=yellow/오후=blue/저녁=purple) before the
+    label; the add-item form gained a period selector (3 toggle buttons) since one form now targets any
+    period. `RoutineChecklist.tsx` is now unused and was deleted. `TodoList.tsx` gained an opt-in
+    `showProgress` prop (defaults off, so `GoalsTab`'s quarter/year lists are unaffected) that renders a
+    `ProgressBar` above the list — turned on for 오늘의 TODO and 이달의 TODO. `DailyPlannerTab` also computes
+    a `ProgressBar` for 오늘의 일정 from `check_status === "o"` over `events.filter(!isBarEvent(...))` (bar/
+    trip events have no O/X toggle so they're excluded from both sides of the fraction). `DiaryBox.tsx`
+    gained a row of 6 mood emoji buttons (😊🙂😐😢😡😴) next to the "📓 오늘의 일기" heading — selecting one
+    toggles it (click again to clear) and it's saved together with `content` in the same upsert, in a new
+    `diary_entries.mood` column.
+  - **New migration `supabase/migrations/0009_diary_mood_and_retrospectives.sql`**: adds
+    `diary_entries.mood` (nullable text) and a new `public.retrospectives` table (`user_id`, `period_key`
+    = `monthKey()` string, `content`, unique per user+period, owner-only RLS) — backs the new monthly
+    retrospective feature below. `src/types/routine.ts` gained `mood: string | null` on `DiaryEntry` and a
+    new `Retrospective` type.
+  - **New `src/components/routine/MonthlyRetrospective.tsx`**: same load/upsert-on-save pattern as
+    `DiaryBox.tsx` but keyed by `monthKey(monthDate)` against `retrospectives` instead of `entry_date`
+    against `diary_entries`, no mood picker (not requested for this one).
+  - **Monthly tab restructure** (`src/components/tabs/MonthlyTab.tsx`): dropped the old
+    `lg:grid-cols-[1.4fr_1fr]` calendar+TODO split — `MonthCalendar` is now full width. Added a category
+    color-legend row directly below it (colored dot + label per `CATEGORY_COLOR_HEX`/`categoryLabel` from
+    `src/lib/events.ts` — no new categories, just a visual legend for the existing 5). `GithubContribution
+    sCard` stays full-width below that (unchanged). Below the GitHub card is a new `lg:grid-cols-2` row:
+    left = the redesigned "📝 이달의 TODO" (`TodoList` with `showProgress`), right = the new "📖 이달의 회고"
+    via `MonthlyRetrospective`. Also gave `MonthCalendar.tsx`'s "today" cell highlight the new pink/purple
+    treatment instead of the old hard-bevel yellow gradient.
+  - **Not changed** (explicitly out of scope, confirmed with the user beforehand): `EventCategory` values/
+    labels (still `general/travel/important/meeting/conference`, just re-legended visually); the "하루 루틴"
+    preset-management tab (`RoutinePresetTab.tsx`) structure — it keeps its 3-column-by-period layout, only
+    inheriting the new colors/shadows via shared tokens; `WeeklyTab`/`GoalsTab`/`VocabQuizTab`/`ChatTab`/
+    `AccountTab` layouts — all inherit the new palette/primitives automatically with no bespoke edits.
+  - Fixed one new lint error introduced by the `TodayRoutineList` merge (`react-hooks/set-state-in-effect`
+    from a `setLoading(true)` at the top of the load effect, same class of issue the old, now-deleted
+    `RoutineChecklist.tsx` used to have) by dropping that call — the initial `useState(true)` already covers
+    first mount, and not resetting to `true` on `dateKey` changes means switching days no longer flashes a
+    "불러오는 중..." loading state (arguably better UX, not just a lint workaround).
+  - `npm run build` and `npm run lint` both pass clean after this batch.
+
 - Chat persistence + UX, month-calendar dot/bar overlap fix, global button/font tweaks, a real GitHub
   contributions widget, a routine-preset sync bug fix, and a themed date/time picker in `EventForm` — all in
   one session, in request order:
@@ -283,12 +355,15 @@ _Last updated: 2026-07-30_
   8. `supabase/migrations/0008_user_settings.sql` (new `user_settings` table — needed for the "내 계정" tab's
      GitHub-username save/load and the GitHub contributions card on the monthly tab; without this, saving on
      the account tab will fail and the contributions card will be stuck showing the "연동하기" prompt)
+  9. `supabase/migrations/0009_diary_mood_and_retrospectives.sql` (`diary_entries.mood` column + new
+     `retrospectives` table — needed for the mood-emoji picker in 오늘의 일기 and the new "이달의 회고" card
+     on the monthly tab; without this, saving a diary mood or a retrospective will error at the DB layer)
 
   Until the user runs all pending ones in order, those features will error at the DB layer (or, for #7
   specifically, old events just silently fall back to the `general` color via `eventColor()`'s `??` —
   not a hard error, but worth running anyway for correct colors). **Check this first** if attachments,
-  vocab groups, bar-style events, routine presets, category colors, the O/X checks/reorder, or the GitHub
-  account tab look broken next session.
+  vocab groups, bar-style events, routine presets, category colors, the O/X checks/reorder, the GitHub
+  account tab, or the diary mood/monthly retrospective look broken next session.
 - Did **not** build a true WYSIWYG rich-text editor with images embedded at the cursor position inside
   free-flowing memo text. Deliberately scoped down to: a drop-zone over the memo area that uploads images
   as separate resizable cards displayed alongside the memo text (not interleaved within it). This satisfies
@@ -323,6 +398,14 @@ _Last updated: 2026-07-30_
 
 ## Next steps (priority order)
 
+-1. **User needs to run `supabase/migrations/0009_diary_mood_and_retrospectives.sql`** before the new mood
+   picker in 오늘의 일기 or the monthly tab's "이달의 회고" card will work end-to-end.
+-1b. Not manually browser-tested: the whole redesign batch above — the merged "오늘의 Routine" list
+   (backfill still works, period-tag colors, the period selector on add), all 4 new progress bars, the diary
+   mood picker persisting/reloading correctly, the monthly retrospective save/reload, the sidebar profile
+   card + mascot/logout card on both desktop and a narrow/mobile width, and the restyled login page/
+   `HeroBanner`. Only `npm run build`/`npm run lint` were run (both clean) — no human eyes on it in an actual
+   browser yet.
 0. **User needs to run `supabase/migrations/0008_user_settings.sql`** before the new "내 계정" tab's GitHub
    username save, or the monthly tab's GitHub contributions card, will work end-to-end.
 0b. Not manually browser-tested: the account tab's save/load round-trip, the contributions card's

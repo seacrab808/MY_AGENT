@@ -19,9 +19,6 @@ import { VocabQuizTab } from "@/components/tabs/VocabQuizTab";
 import { AccountTab } from "@/components/tabs/AccountTab";
 import { TodayPopup } from "@/components/notifications/TodayPopup";
 import { WeeklyPopup } from "@/components/notifications/WeeklyPopup";
-import { PixelButton } from "@/components/ui/PixelButton";
-import { HeroBanner } from "@/components/HeroBanner";
-import { logout } from "@/app/actions";
 
 interface DashboardProps {
   userId: string;
@@ -98,20 +95,13 @@ export function Dashboard({
 
   return (
     <div className="flex flex-col flex-1 max-w-7xl w-full mx-auto p-4 gap-4">
-      <HeroBanner
-        title="🌱 PIXEL PLANNER"
-        subtitle={greeting}
-        right={
-          <form action={logout}>
-            <PixelButton type="submit" tone="ink" className="text-sm px-3 py-1.5">
-              로그아웃
-            </PixelButton>
-          </form>
-        }
-      />
-
       <div className="flex flex-col md:flex-row gap-4 items-start flex-1 min-w-0">
-        <Sidebar active={activeTab} onChange={setActiveTab} />
+        <Sidebar
+          active={activeTab}
+          onChange={setActiveTab}
+          displayName={displayName}
+          greeting={greeting}
+        />
 
         <div className="flex-1 min-w-0 w-full">
           {activeTab === "monthly" && (
