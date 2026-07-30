@@ -31,8 +31,8 @@ export default async function Home() {
   }
 
   const now = new Date();
-  const gridStart = startOfWeek(startOfMonth(now), { weekStartsOn: 1 });
-  const gridEnd = endOfWeek(endOfMonth(now), { weekStartsOn: 1 });
+  const gridStart = startOfWeek(startOfMonth(now), { weekStartsOn: 0 });
+  const gridEnd = endOfWeek(endOfMonth(now), { weekStartsOn: 0 });
 
   const initialEvents = await fetchEventsForRange(
     supabase,

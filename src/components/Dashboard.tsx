@@ -12,6 +12,7 @@ import { MonthlyTab } from "@/components/tabs/MonthlyTab";
 import { ChatTab } from "@/components/tabs/ChatTab";
 import { WeeklyTab } from "@/components/tabs/WeeklyTab";
 import { DailyPlannerTab } from "@/components/tabs/DailyPlannerTab";
+import { RoutinePresetTab } from "@/components/tabs/RoutinePresetTab";
 import { GoalsTab } from "@/components/tabs/GoalsTab";
 import { VocabQuizTab } from "@/components/tabs/VocabQuizTab";
 import { TodayPopup } from "@/components/notifications/TodayPopup";
@@ -44,8 +45,8 @@ export function Dashboard({ userId, userEmail, initialEvents, initialMonth }: Da
 
   useEffect(() => {
     const supabase = createClient();
-    const gridStart = startOfWeek(startOfMonth(monthDate), { weekStartsOn: 1 });
-    const gridEnd = endOfWeek(endOfMonth(monthDate), { weekStartsOn: 1 });
+    const gridStart = startOfWeek(startOfMonth(monthDate), { weekStartsOn: 0 });
+    const gridEnd = endOfWeek(endOfMonth(monthDate), { weekStartsOn: 0 });
 
     fetchEventsForRange(supabase, toDateKey(gridStart), toDateKey(gridEnd)).then(setEvents);
   }, [monthDate]);
@@ -121,6 +122,7 @@ export function Dashboard({ userId, userEmail, initialEvents, initialMonth }: Da
           {activeTab === "chat" && <ChatTab onEventCreated={handleEventCreated} />}
           {activeTab === "weekly" && <WeeklyTab userId={userId} />}
           {activeTab === "daily" && <DailyPlannerTab userId={userId} />}
+          {activeTab === "routine_preset" && <RoutinePresetTab userId={userId} />}
           {activeTab === "goals" && <GoalsTab userId={userId} />}
           {activeTab === "vocab" && <VocabQuizTab userId={userId} />}
         </div>

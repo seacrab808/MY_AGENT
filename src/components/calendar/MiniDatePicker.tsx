@@ -16,7 +16,7 @@ import {
 } from "date-fns";
 import { PixelIconButton } from "@/components/ui/PixelIconButton";
 
-const WEEKDAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
+const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 
 interface MiniDatePickerProps {
   value: Date;
@@ -26,8 +26,8 @@ interface MiniDatePickerProps {
 export function MiniDatePicker({ value, onSelect }: MiniDatePickerProps) {
   const [viewMonth, setViewMonth] = useState(() => startOfMonth(value));
 
-  const gridStart = startOfWeek(startOfMonth(viewMonth), { weekStartsOn: 1 });
-  const gridEnd = endOfWeek(endOfMonth(viewMonth), { weekStartsOn: 1 });
+  const gridStart = startOfWeek(startOfMonth(viewMonth), { weekStartsOn: 0 });
+  const gridEnd = endOfWeek(endOfMonth(viewMonth), { weekStartsOn: 0 });
   const days = eachDayOfInterval({ start: gridStart, end: gridEnd });
 
   return (

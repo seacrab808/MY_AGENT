@@ -23,7 +23,7 @@ import type { PlannerEvent } from "@/types/event";
 import { PixelCard } from "@/components/ui/PixelCard";
 import { PixelIconButton } from "@/components/ui/PixelIconButton";
 
-const WEEKDAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
+const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 
 interface BarSegment {
   event: PlannerEvent;
@@ -92,8 +92,8 @@ interface MonthCalendarProps {
 }
 
 export function MonthCalendar({ monthDate, onMonthChange, events, onSelectDate }: MonthCalendarProps) {
-  const gridStart = startOfWeek(startOfMonth(monthDate), { weekStartsOn: 1 });
-  const gridEnd = endOfWeek(endOfMonth(monthDate), { weekStartsOn: 1 });
+  const gridStart = startOfWeek(startOfMonth(monthDate), { weekStartsOn: 0 });
+  const gridEnd = endOfWeek(endOfMonth(monthDate), { weekStartsOn: 0 });
   const allDays = eachDayOfInterval({ start: gridStart, end: gridEnd });
 
   const monthEvents = useMemo(() => filterEventsForTab(events, "month"), [events]);
