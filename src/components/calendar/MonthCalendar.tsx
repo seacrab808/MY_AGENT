@@ -29,6 +29,8 @@ const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 const BAR_ROW_HEIGHT = 24;
 const BAR_ROW_GAP = 3;
 const BAR_TOP_OFFSET = 27;
+const DOT_BASE_MARGIN_TOP = 4; // 바가 없는 날, 날짜 숫자와 점 사이 기본 여백 (기존 mt-1과 동일)
+const MAX_VISIBLE_DOTS = 3;
 
 interface BarSegment {
   event: PlannerEvent;
@@ -148,17 +150,34 @@ export function MonthCalendar({ monthDate, onMonthChange, events, onSelectDate }
           return (
             <div key={toDateKey(weekStart)} className="relative">
               <div className="grid grid-cols-7 gap-1">
-                {weekDays.map((day) => {
+                {weekDays.map((day, dayIndex) => {
                   const dateKey = toDateKey(day);
                   const dotEvents = (monthEventsByDate[dateKey] ?? []).filter((e) => !isBarEvent(e));
                   const inMonth = isSameMonth(day, monthDate);
                   const todayFlag = isToday(day);
 
+                  // 이 날짜 칸을 지나가는 바 레인 수만큼 점을 아래로 내려서 바와 겹치지 않게 함
+                  const dayCol = dayIndex + 1;
+                  const dayBarLaneCount = bars.reduce(
+                    (max, seg) =>
+                      dayCol >= seg.startCol && dayCol <= seg.startCol + seg.span - 1
+                        ? Math.max(max, seg.lane + 1)
+                        : max,
+                    0,
+                  );
+                  const dotsMarginTop =
+                    dayBarLaneCount > 0
+                      ? dayBarLaneCount * (BAR_ROW_HEIGHT + BAR_ROW_GAP)
+                      : DOT_BASE_MARGIN_TOP;
+
+                  const visibleDots = dotEvents.slice(0, MAX_VISIBLE_DOTS);
+                  const hasMoreDots = dotEvents.length > MAX_VISIBLE_DOTS;
+
                   return (
                     <button
                       key={dateKey}
                       onClick={() => onSelectDate(dateKey)}
-                      className={`min-h-[76px] sm:min-h-[92px] flex flex-col items-center justify-start p-1 rounded-[8px] border-2 cursor-pointer transition-transform ${
+                      className={`min-h-[76px] sm:min-h-[92px] flex flex-col items-center justify-start p-1 rounded-[8px] border-2 cursor-pointer transition-transform overflow-hidden ${
                         todayFlag
                           ? "border-pixel-border bg-gradient-to-b from-[#ffedb0] to-pixel-yellow shadow-[var(--pixel-bevel)] text-pixel-chip-ink"
                           : "border-transparent hover:border-pixel-border hover:-translate-y-0.5"
@@ -166,14 +185,20 @@ export function MonthCalendar({ monthDate, onMonthChange, events, onSelectDate }
                       style={{ paddingBottom: laneCount * (BAR_ROW_HEIGHT + BAR_ROW_GAP) + 4 }}
                     >
                       <span className="font-cute text-base leading-none mt-1">{format(day, "d")}</span>
-                      <div className="flex gap-0.5 mt-1 flex-wrap justify-center">
-                        {dotEvents.slice(0, 3).map((event) => (
+                      <div
+                        className="flex items-center gap-0.5 flex-nowrap justify-center"
+                        style={{ marginTop: dotsMarginTop }}
+                      >
+                        {visibleDots.map((event) => (
                           <span
                             key={event.id}
-                            className="w-1.5 h-1.5 rounded-full"
+                            className="w-1.5 h-1.5 rounded-full shrink-0"
                             style={{ backgroundColor: eventColor(event) }}
                           />
                         ))}
+                        {hasMoreDots && (
+                          <span className="text-[10px] leading-none text-pixel-ink-soft shrink-0">…</span>
+                        )}
                       </div>
                     </button>
                   );
