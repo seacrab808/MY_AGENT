@@ -7,6 +7,28 @@ _Last updated: 2026-07-30_
 
 ## Tried
 
+- **User-toggleable light/dark mode from the sidebar**, replacing the old OS-only
+  `@media (prefers-color-scheme: dark)` approach:
+  - `globals.css`'s dark palette block changed from `@media (prefers-color-scheme: dark) { :root { ... } }`
+    to `:root.dark { ... }` — same variable values, just gated on a `.dark` class instead of an OS media
+    query, so JS can flip it on demand. Added a `transition` on `body`'s `background-color`/`color` so the
+    switch fades instead of snapping.
+  - New `src/hooks/useTheme.ts`: reads/writes `localStorage["planner-theme"]` (`"light" | "dark"`) and
+    toggles the `dark` class on `document.documentElement`. Initial React state uses a **lazy `useState`
+    initializer** that reads the class directly (not a `useEffect` + `setState`, which the
+    `react-hooks/set-state-in-effect` lint rule flags) — this only works because `layout.tsx` now also
+    injects a small blocking inline `<script>` in `<head>` that runs *before* hydration and adds `.dark`
+    to `<html>` based on the stored preference (falling back to `matchMedia('(prefers-color-scheme: dark)')`
+    only when nothing is stored yet), so by the time React's initializer runs client-side the class is
+    already correct — this is the standard no-flash pattern (same idea as `next-themes`). Because the
+    server-rendered HTML can't know the real client theme, `<html>` got `suppressHydrationWarning` and the
+    new `ThemeToggle` button also has it (its emoji content depends on this client-only state).
+  - New `src/components/ui/ThemeToggle.tsx`: a small circular 🌞/🌙 icon button, wired into the top-right of
+    `Sidebar.tsx`'s profile card (next to the name/app-title text). Once a user clicks it, that explicit
+    choice always wins over the OS setting from then on (stored in `localStorage`, not re-derived from
+    `matchMedia` again).
+  - `npm run build`/`npm run lint` both pass clean.
+
 - **Full visual redesign: "pixel game" → soft pastel/washi-tape diary theme**, plus a Daily Planner/Monthly
   restructure, per the user's mockups. Confirmed scope with the user first (full app reskin via shared
   tokens, `HeroBanner` removed and its content moved into a new `Sidebar` profile card, pixel identity fully
@@ -398,6 +420,10 @@ _Last updated: 2026-07-30_
 
 ## Next steps (priority order)
 
+-2. Not manually browser-tested: the new light/dark toggle — clicking it in the sidebar actually flips the
+   whole app's colors, the choice survives a page reload (`localStorage`), and a fresh browser/incognito
+   session with no stored preference still respects the OS dark-mode setting on first load. Only
+   build/lint-checked so far.
 -1. **User needs to run `supabase/migrations/0009_diary_mood_and_retrospectives.sql`** before the new mood
    picker in 오늘의 일기 or the monthly tab's "이달의 회고" card will work end-to-end.
 -1b. Not manually browser-tested: the whole redesign batch above — the merged "오늘의 Routine" list

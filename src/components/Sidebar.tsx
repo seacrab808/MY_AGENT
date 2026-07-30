@@ -2,6 +2,7 @@
 
 import { TABS, type TabKey } from "@/lib/tabs";
 import { PixelButton } from "@/components/ui/PixelButton";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { logout } from "@/app/actions";
 
 interface SidebarProps {
@@ -24,10 +25,11 @@ export function Sidebar({ active, onChange, displayName, greeting }: SidebarProp
         >
           🐰
         </span>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="font-cute text-base font-bold truncate">{nameLabel}의 플래너</p>
           <p className="font-body text-[11px] text-pixel-ink-soft truncate">🌱 PIXEL PLANNER</p>
         </div>
+        <ThemeToggle />
       </div>
 
       <div className="relative">

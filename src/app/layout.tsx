@@ -32,13 +32,32 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+// 페이지가 그려지기 전에(hydration 전) 저장된 테마를 <html>에 미리 붙여서 라이트→다크 깜빡임을
+// 막는 블로킹 스크립트. 저장된 값이 없으면 그때만 시스템(OS) 설정을 1회 참고함.
+const THEME_INIT_SCRIPT = `
+(function () {
+  try {
+    var stored = localStorage.getItem("planner-theme");
+    var isDark = stored === "dark" || (stored !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    if (isDark) document.documentElement.classList.add("dark");
+  } catch (e) {}
+})();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={`${pressStart.variable} ${gaegu.variable} h-full antialiased`}>
+    <html
+      lang="ko"
+      className={`${pressStart.variable} ${gaegu.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">
         {children}
         <ServiceWorkerRegister />
