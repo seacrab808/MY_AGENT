@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { addDays, format, isToday, subDays } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
-import { fetchEventsForRange } from "@/lib/events";
+import { fetchEventsForRange, setEventCheckStatus } from "@/lib/events";
 import { toDateKey, ENGLISH_WEEKDAY } from "@/lib/date";
 import { PixelCard } from "@/components/ui/PixelCard";
 import { PixelIconButton } from "@/components/ui/PixelIconButton";
@@ -16,7 +16,7 @@ import { MiniDatePicker } from "@/components/calendar/MiniDatePicker";
 import { TodoList } from "@/components/todo/TodoList";
 import { RoutineChecklist } from "@/components/routine/RoutineChecklist";
 import { DiaryBox } from "@/components/routine/DiaryBox";
-import type { PlannerEvent } from "@/types/event";
+import type { EventCheckStatus, PlannerEvent } from "@/types/event";
 
 interface DailyPlannerTabProps {
   userId: string;
@@ -34,6 +34,12 @@ export function DailyPlannerTab({ userId }: DailyPlannerTabProps) {
     const supabase = createClient();
     fetchEventsForRange(supabase, dateKey, dateKey).then(setEvents);
   }, [dateKey]);
+
+  function handleSetCheckStatus(event: PlannerEvent, status: EventCheckStatus | null) {
+    setEvents((prev) => prev.map((e) => (e.id === event.id ? { ...e, check_status: status } : e)));
+    const supabase = createClient();
+    setEventCheckStatus(supabase, event.id, status);
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -96,7 +102,11 @@ export function DailyPlannerTab({ userId }: DailyPlannerTabProps) {
             + 추가
           </PixelButton>
         </div>
-        <EventList events={events} onSelect={setSelectedEvent} />
+        <EventList
+          events={events}
+          onSelect={setSelectedEvent}
+          onSetCheckStatus={handleSetCheckStatus}
+        />
       </PixelCard>
 
       <AddEventModal

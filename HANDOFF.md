@@ -35,6 +35,12 @@ _Last updated: 2026-07-30_
   building a quiz, and an Enter-key UX fix so adding a word returns focus to the term field.
 - Established this file (`HANDOFF.md`) and the git auto-commit/push convention per explicit user request —
   see `CLAUDE.md` "Workflow rules" for the exact rules going forward.
+- Added O/△/X completion-check buttons to the daily planner's "오늘의 일정" event list (right side of each
+  row), backed by a new `events.check_status` column.
+- Refactored `VocabQuiz.tsx`'s quiz-deck state (originally a snapshot array of `VocabWord` objects synced
+  back to the live `words` prop via a `useEffect`, which the linter flagged as a `set-state-in-effect`
+  violation) to store only word IDs and derive the displayed deck from the live `words` array via
+  `useMemo` — removes the effect entirely and the deck can never go stale.
 
 ## Done (verified working)
 
@@ -45,18 +51,22 @@ _Last updated: 2026-07-30_
 - Confirmed the multi-day overlap query (`fetchEventsForRange` in `src/lib/events.ts`) constructs correct
   PostgREST `.or()` filter syntax (checked the literal generated URL, not just reasoning about it).
 - Not manually browser-tested end-to-end (no login credentials available in this environment) — type/lint/
-  build passing is the extent of verification for the UI flows in this handoff (calendar features AND the
-  new vocab groups/marks feature).
-- Committed and pushed to `origin/main` (https://github.com/seacrab808/MY_AGENT.git).
+  build passing is the extent of verification for all UI flows in this handoff (calendar features, vocab
+  groups/marks, and the new O/△/X check buttons).
+- Committed and pushed to `origin/main` (https://github.com/seacrab808/MY_AGENT.git) after each batch.
 
 ## Failed / blocked
 
-- **Two migration files have not been run against the live Supabase project yet:**
-  `supabase/migrations/0001_event_attachments.sql` (attachment columns + storage bucket — needed for
-  photo/file upload to work) and `supabase/migrations/0002_vocab_groups_marks.sql` (vocab_groups table +
-  group_id/is_starred/is_triangled columns on vocab_words — needed for the new grouping/marking feature).
-  Until the user runs both, those two features will error at the DB layer. **Check this first** if either
-  area looks broken next session.
+- **Three migration files have not been run against the live Supabase project yet, in this order:**
+  1. `supabase/migrations/0001_event_attachments.sql` (attachment columns + storage bucket — needed for
+     photo/file upload)
+  2. `supabase/migrations/0002_vocab_groups_marks.sql` (vocab_groups table + group_id/is_starred/
+     is_triangled columns — needed for vocab grouping/marking)
+  3. `supabase/migrations/0003_event_check_status.sql` (events.check_status column — needed for the new
+     O/△/X buttons in the daily planner)
+
+  Until the user runs all three, those features will error at the DB layer. **Check this first** if any of
+  attachments, vocab groups, or the O/△/X checks look broken next session.
 - Did **not** build a true WYSIWYG rich-text editor with images embedded at the cursor position inside
   free-flowing memo text. Deliberately scoped down to: a drop-zone over the memo area that uploads images
   as separate resizable cards displayed alongside the memo text (not interleaved within it). This satisfies
@@ -71,16 +81,22 @@ _Last updated: 2026-07-30_
   out to be exactly this (user was on today, not on the trip's date range), not a data bug.
 - Vocab groups: did not add drag-to-reorder groups or bulk move-word-between-groups. Not asked for; flagging
   only so it isn't assumed done.
+- O/△/X checks were only wired into the daily planner's `EventList` (the specific place asked for), via a
+  new optional `onSetCheckStatus` prop on the shared `EventList` component. Monthly's `DayPopup` and the
+  notification popups (`TodayPopup`/`WeeklyPopup`) don't pass that prop yet, so they don't show the check
+  buttons — that's an easy follow-up (just pass the same handler through) if the user wants it everywhere,
+  but wasn't asked for this round.
 
 ## Next steps (priority order)
 
-1. **User needs to run both pending migration files** in the Supabase SQL Editor, in order:
-   `supabase/migrations/0001_event_attachments.sql` then `0002_vocab_groups_marks.sql`.
+1. **User needs to run all three pending migration files** in the Supabase SQL Editor, in numeric order
+   (0001 → 0002 → 0003).
 2. Manually verify in a real browser once logged in: multi-day bar rendering across a month boundary, color
-   picker, event edit/delete/duplicate, attachment upload/resize, and the new vocab group create/rename/
-   delete + star/triangle quiz filtering — none of this has had human eyes on it yet, only automated
-   build/lint checks.
+   picker, event edit/delete/duplicate, attachment upload/resize, vocab group create/rename/delete +
+   star/triangle quiz filtering, and the new O/△/X buttons in the daily planner — none of this has had human
+   eyes on it yet, only automated build/lint checks.
 3. If the user wants true inline (cursor-position) image embedding in memos instead of the current
    below-text resizable-card gallery, that's a scope decision to raise with them before implementing — see
    "Failed / blocked" above.
-4. Nothing else currently queued.
+4. If the user wants O/△/X checks in Monthly's day popup or the notification popups too, wire the same
+   `onSetCheckStatus` handler pattern used in `DailyPlannerTab.tsx` into those call sites.

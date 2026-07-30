@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { VocabGroup, VocabWord } from "@/types/vocab";
 import { FlipCard } from "@/components/vocab/FlipCard";
 import { PixelCard } from "@/components/ui/PixelCard";
@@ -42,27 +42,15 @@ export function VocabQuiz({ words, groups, onToggleStarred, onToggleTriangled }:
   ]);
   const [markFilter, setMarkFilter] = useState<MarkFilter>("all");
   const [count, setCount] = useState(5);
-  const [deck, setDeck] = useState<VocabWord[] | null>(null);
+  // deck은 word id만 들고 있고, 실제 카드 데이터는 항상 최신 words에서 조회한다.
+  // (별도 스냅샷을 상태로 들고 있으면 words가 바뀔 때마다 effect로 동기화해야 해서 지저분해짐)
+  const [deckIds, setDeckIds] = useState<string[] | null>(null);
 
-  useEffect(() => {
-    if (!deck) return;
+  const deck = useMemo(() => {
+    if (!deckIds) return null;
     const wordMap = new Map(words.map((w) => [w.id, w]));
-    setDeck((prevDeck) => (prevDeck ? prevDeck.map((w) => wordMap.get(w.id) ?? w) : null));
-  }, [words]);
-
-  function handleToggleStarred(word: VocabWord) {
-    setDeck((prev) =>
-      prev ? prev.map((w) => (w.id === word.id ? { ...w, is_starred: !w.is_starred } : w)) : null,
-    );
-    onToggleStarred(word);
-  }
-
-  function handleToggleTriangled(word: VocabWord) {
-    setDeck((prev) =>
-      prev ? prev.map((w) => (w.id === word.id ? { ...w, is_triangled: !w.is_triangled } : w)) : null,
-    );
-    onToggleTriangled(word);
-  }
+    return deckIds.map((id) => wordMap.get(id)).filter((w): w is VocabWord => Boolean(w));
+  }, [deckIds, words]);
 
   const pool = useMemo(() => {
     return words
@@ -87,7 +75,7 @@ export function VocabQuiz({ words, groups, onToggleStarred, onToggleTriangled }:
   }
 
   function startQuiz() {
-    setDeck(shuffle(pool).slice(0, Math.min(count, pool.length)));
+    setDeckIds(shuffle(pool).slice(0, Math.min(count, pool.length)).map((w) => w.id));
   }
 
   if (words.length === 0) {
@@ -203,11 +191,11 @@ export function VocabQuiz({ words, groups, onToggleStarred, onToggleTriangled }:
           <PixelButton
             tone="yellow"
             className="text-sm px-3 py-1.5"
-            onClick={() => setDeck(shuffle(pool).slice(0, Math.min(count, pool.length)))}
+            onClick={() => setDeckIds(shuffle(pool).slice(0, Math.min(count, pool.length)).map((w) => w.id))}
           >
             다시 섞기
           </PixelButton>
-          <PixelButton tone="ink" className="text-sm px-3 py-1.5" onClick={() => setDeck(null)}>
+          <PixelButton tone="ink" className="text-sm px-3 py-1.5" onClick={() => setDeckIds(null)}>
             설정으로
           </PixelButton>
         </div>
@@ -217,8 +205,8 @@ export function VocabQuiz({ words, groups, onToggleStarred, onToggleTriangled }:
           <FlipCard
             key={word.id}
             word={word}
-            onToggleStarred={handleToggleStarred}
-            onToggleTriangled={handleToggleTriangled}
+            onToggleStarred={onToggleStarred}
+            onToggleTriangled={onToggleTriangled}
           />
         ))}
       </div>

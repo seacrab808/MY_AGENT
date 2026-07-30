@@ -1,12 +1,19 @@
-import type { PlannerEvent } from "@/types/event";
+import type { EventCheckStatus, PlannerEvent } from "@/types/event";
 import { categoryLabel, eventColor } from "@/lib/events";
+
+const CHECK_OPTIONS: { value: EventCheckStatus; label: string; activeClass: string }[] = [
+  { value: "o", label: "O", activeClass: "bg-pixel-mint text-pixel-chip-ink" },
+  { value: "triangle", label: "△", activeClass: "bg-pixel-yellow text-pixel-chip-ink" },
+  { value: "x", label: "X", activeClass: "bg-pixel-red text-pixel-bg" },
+];
 
 interface EventListProps {
   events: PlannerEvent[];
   onSelect?: (event: PlannerEvent) => void;
+  onSetCheckStatus?: (event: PlannerEvent, status: EventCheckStatus | null) => void;
 }
 
-export function EventList({ events, onSelect }: EventListProps) {
+export function EventList({ events, onSelect, onSetCheckStatus }: EventListProps) {
   if (events.length === 0) {
     return <p className="font-body text-pixel-ink-soft text-sm py-3">등록된 일정이 없어요.</p>;
   }
@@ -43,21 +50,45 @@ export function EventList({ events, onSelect }: EventListProps) {
           </>
         );
 
+        const checkButtons = onSetCheckStatus && (
+          <div className="flex items-center gap-1 shrink-0">
+            {CHECK_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSetCheckStatus(event, event.check_status === opt.value ? null : opt.value);
+                }}
+                title={opt.label}
+                className={`font-pixel text-[10px] min-w-[32px] min-h-[32px] flex items-center justify-center border-2 border-pixel-border rounded-[6px] cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${
+                  event.check_status === opt.value ? opt.activeClass : "bg-pixel-panel text-pixel-ink"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        );
+
         return (
           <li key={event.id}>
-            {onSelect ? (
-              <button
-                type="button"
-                onClick={() => onSelect(event)}
-                className="w-full flex items-start gap-2 border-2 border-pixel-border rounded-[10px] p-2.5 bg-pixel-bg text-left cursor-pointer hover:-translate-y-0.5 transition-transform"
-              >
-                {content}
-              </button>
-            ) : (
-              <div className="flex items-start gap-2 border-2 border-pixel-border rounded-[10px] p-2.5 bg-pixel-bg">
-                {content}
-              </div>
-            )}
+            <div className="flex items-stretch gap-2">
+              {onSelect ? (
+                <button
+                  type="button"
+                  onClick={() => onSelect(event)}
+                  className="flex-1 min-w-0 flex items-start gap-2 border-2 border-pixel-border rounded-[10px] p-2.5 bg-pixel-bg text-left cursor-pointer hover:-translate-y-0.5 transition-transform"
+                >
+                  {content}
+                </button>
+              ) : (
+                <div className="flex-1 min-w-0 flex items-start gap-2 border-2 border-pixel-border rounded-[10px] p-2.5 bg-pixel-bg">
+                  {content}
+                </div>
+              )}
+              {checkButtons}
+            </div>
           </li>
         );
       })}

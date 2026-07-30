@@ -2,6 +2,8 @@ export type EventCategory = "general" | "dday" | "exam" | "meeting";
 
 export type EventVisibility = "month" | "week" | "day";
 
+export type EventCheckStatus = "o" | "triangle" | "x";
+
 export interface PlannerEvent {
   id: string;
   user_id: string;
@@ -14,5 +16,6 @@ export interface PlannerEvent {
   category: EventCategory;
   color: string | null; // 사용자가 고른 파스텔 hex color
   visibility: EventVisibility; // month | week | day (하위 단계에는 항상 노출됨)
+  check_status: EventCheckStatus | null; // o(완료) | triangle(부분/보류) | x(미완료) | null(미체크)
   created_at: string;
 }

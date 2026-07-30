@@ -185,6 +185,7 @@ export type UpdateEventInput = Partial<
     | "category"
     | "color"
     | "visibility"
+    | "check_status"
   >
 >;
 
@@ -201,6 +202,14 @@ export async function updateEvent(
   }
 
   return { event: data as PlannerEvent, error: null };
+}
+
+export async function setEventCheckStatus(
+  supabase: SupabaseClient,
+  id: string,
+  checkStatus: PlannerEvent["check_status"],
+): Promise<{ event: PlannerEvent | null; error: string | null }> {
+  return updateEvent(supabase, id, { check_status: checkStatus });
 }
 
 export async function deleteEvent(supabase: SupabaseClient, id: string): Promise<string | null> {
