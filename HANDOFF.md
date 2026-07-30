@@ -7,6 +7,20 @@ _Last updated: 2026-07-30_
 
 ## Tried
 
+- Diagnosed reported "chat AI keeps failing" (browser console showing `/api/chat` 401 then 502). Root cause
+  for the 401: `src/middleware.ts`'s matcher excluded `/api/*`, so an expired Supabase access-token cookie
+  was never refreshed before `/api/chat`'s own `supabase.auth.getUser()` check ran — the session looked
+  logged-out to that route even though the browser tab was still logged in. Fixed by migrating
+  `middleware.ts` → `src/proxy.ts` (the Next.js 16 rename CLAUDE.md already flagged as deferred — did it now
+  since this touches auth routing directly) and widening the matcher to include `/api`, while adding an
+  early-return in `src/lib/supabase/middleware.ts`'s `updateSession()` so API paths still get the
+  refresh-and-persist-cookies side effect but skip the page-only redirect-to-`/login` logic (API routes
+  return their own JSON 401 instead). For the 502: confirmed via a standalone script that the Gemini API key
+  + `gemini-flash-latest` model both work right now (not a repeat of the earlier retired-model issue from
+  the prior handoff entry) — likely a transient failure. Improved `src/app/api/chat/route.ts`'s catch block
+  to log the actual error status/message instead of a bare `console.error(err)`, so the next occurrence is
+  diagnosable from server logs instead of only showing a generic 502 in the browser.
+
 - Built multi-day ("여행" style) calendar events on the monthly grid: continuous colored bars spanning
   days, user-pickable pastel colors, and a month→week→day visibility cascade so an event registered at one
   granularity auto-shows in finer views but not coarser ones.
@@ -54,6 +68,11 @@ _Last updated: 2026-07-30_
   build passing is the extent of verification for all UI flows in this handoff (calendar features, vocab
   groups/marks, and the new O/△/X check buttons).
 - Committed and pushed to `origin/main` (https://github.com/seacrab808/MY_AGENT.git) after each batch.
+- `npx tsc --noEmit` and `npm run build` pass clean after the proxy.ts migration (build output confirms
+  `ƒ Proxy (Middleware)` now covers `/api`, and the deprecation warning about `middleware.ts` is gone).
+  Not manually re-tested in a live logged-in browser session — could not reproduce the original 401 locally
+  (this environment has no logged-in session to let an access token actually expire), so the fix is reasoned
+  from the Supabase/Next.js session-refresh model, not confirmed by watching a real expiry-then-recover.
 
 ## Failed / blocked
 
@@ -89,14 +108,17 @@ _Last updated: 2026-07-30_
 
 ## Next steps (priority order)
 
-1. **User needs to run all three pending migration files** in the Supabase SQL Editor, in numeric order
-   (0001 → 0002 → 0003).
-2. Manually verify in a real browser once logged in: multi-day bar rendering across a month boundary, color
+1. **Confirm the chat 401 is actually gone**: use the app normally, leave the tab open past an hour (Supabase
+   default access-token TTL), then send a chat message — should no longer 401. If it still does, the refresh
+   token itself may be invalid/revoked (e.g. reuse-detection from multiple tabs) rather than the matcher gap
+   that was just fixed; that would need re-logging-in to confirm, not another code change.
+2. **User needs to run all pending migration files** in the Supabase SQL Editor, in numeric order.
+3. Manually verify in a real browser once logged in: multi-day bar rendering across a month boundary, color
    picker, event edit/delete/duplicate, attachment upload/resize, vocab group create/rename/delete +
    star/triangle quiz filtering, and the new O/△/X buttons in the daily planner — none of this has had human
    eyes on it yet, only automated build/lint checks.
-3. If the user wants true inline (cursor-position) image embedding in memos instead of the current
+4. If the user wants true inline (cursor-position) image embedding in memos instead of the current
    below-text resizable-card gallery, that's a scope decision to raise with them before implementing — see
    "Failed / blocked" above.
-4. If the user wants O/△/X checks in Monthly's day popup or the notification popups too, wire the same
+5. If the user wants O/△/X checks in Monthly's day popup or the notification popups too, wire the same
    `onSetCheckStatus` handler pattern used in `DailyPlannerTab.tsx` into those call sites.
