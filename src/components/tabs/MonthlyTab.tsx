@@ -37,20 +37,22 @@ export function MonthlyTab({
 }: MonthlyTabProps) {
   return (
     <div className="grid lg:grid-cols-[1.4fr_1fr] gap-4 items-start">
-      <div className="flex flex-col gap-4 min-w-0">
-        <MonthCalendar
-          monthDate={monthDate}
-          onMonthChange={onMonthChange}
-          events={events}
-          onSelectDate={onSelectDate}
-        />
-        <GithubContributionsCard />
-      </div>
+      <MonthCalendar
+        monthDate={monthDate}
+        onMonthChange={onMonthChange}
+        events={events}
+        onSelectDate={onSelectDate}
+      />
 
       <PixelCard>
         <h2 className="font-cute text-2xl mb-2">📝 이달의 TODO</h2>
         <TodoList userId={userId} scope="month" periodKey={monthKey(monthDate)} />
       </PixelCard>
+
+      {/* 캘린더+TODO 전체 너비만큼 꽉 채워서 아래에 배치 */}
+      <div className="lg:col-span-2 min-w-0">
+        <GithubContributionsCard />
+      </div>
 
       <DayPopup
         dateKey={selectedDateKey}
