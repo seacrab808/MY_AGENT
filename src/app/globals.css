@@ -106,44 +106,104 @@ body {
   transition: background 0.4s ease, color 0.2s ease;
 }
 
-/* 다크 모드 배경: 남색/보라가 섞인 밤하늘 그라데이션 */
+/* 라이트 모드 배경: 싱그러운 봄 느낌의 핑크·초록·노랑 그라데이션 + 은은한 햇살 글로우.
+   다크 모드 배경: 남색/보라가 섞인 밤하늘 그라데이션.
+   두 모드 모두 background-attachment: fixed로 뷰포트 기준으로 고정해서, 페이지가 한 화면보다
+   길어져도(스크롤) 그라데이션이 문서 전체 높이가 아니라 항상 "지금 보이는 화면"에 맞춰 다시
+   그려지므로 어느 지점까지 스크롤해도 그라데이션이 끊기지 않고 계속 이어짐. */
+:root:not(.dark) body {
+  background:
+    radial-gradient(1100px 850px at 6% -10%, #ffd3e8 0%, transparent 55%),
+    radial-gradient(950px 750px at 102% -6%, #fff2ae 0%, transparent 55%),
+    radial-gradient(1000px 800px at 20% 108%, #c8f2cf 0%, transparent 55%),
+    radial-gradient(850px 700px at 100% 105%, #ffdcc2 0%, transparent 55%),
+    radial-gradient(700px 550px at 55% 42%, rgba(255, 255, 255, 0.55) 0%, transparent 60%),
+    var(--pixel-bg);
+  background-attachment: fixed;
+}
+
 :root.dark body {
   background:
     radial-gradient(900px 700px at 10% 0%, #2a1f5c 0%, transparent 55%),
     radial-gradient(800px 700px at 90% 10%, #3b2560 0%, transparent 55%),
     radial-gradient(700px 700px at 50% 100%, #1e2a5a 0%, transparent 55%),
     #14113a;
+  background-attachment: fixed;
 }
 
-/* 밤하늘 위에 살짝 반짝이는 별들 (다크 모드에서만) */
-:root.dark body::after {
+/* 배경 위에 얹는 반짝임 두 겹. body::after(레이어 A) + 아래 .sparkle-layer-b(레이어 B)를
+   서로 다른 위치/시간차로 겹쳐서, 화면 전체가 한 박자로 반짝이지 않고 진짜 별/윤슬처럼
+   제각각 밝아졌다 어두워지는 느낌을 냄. 각 점은 밝은 코어 + 부드러운 헤일로 2단 stop으로
+   그려서(하드엣지 원이 아니라) 네온처럼 은은하게 번지는 빛 느낌을 줌. position:fixed라서
+   body 자체와 달리 늘 뷰포트 기준으로 그려지고(스크롤과 무관), 다크 모드에선 흰색/하늘색/
+   핑크빛 별, 라이트 모드에선 노랑/피치/민트빛 햇살 스파클로 색만 바뀜. */
+body::after,
+.sparkle-layer-b {
   content: "";
   position: fixed;
   inset: 0;
-  background-image:
-    radial-gradient(1.5px 1.5px at 15% 20%, #fff 100%, transparent),
-    radial-gradient(1px 1px at 32% 45%, rgba(255, 255, 255, 0.7) 100%, transparent),
-    radial-gradient(2px 2px at 68% 12%, #fff 100%, transparent),
-    radial-gradient(1px 1px at 88% 30%, rgba(255, 255, 255, 0.5) 100%, transparent),
-    radial-gradient(1.5px 1.5px at 8% 60%, #fff 100%, transparent),
-    radial-gradient(1px 1px at 25% 78%, rgba(255, 255, 255, 0.6) 100%, transparent),
-    radial-gradient(2px 2px at 52% 88%, #fff 100%, transparent),
-    radial-gradient(1px 1px at 75% 66%, rgba(255, 255, 255, 0.7) 100%, transparent),
-    radial-gradient(1.5px 1.5px at 92% 82%, #fff 100%, transparent),
-    radial-gradient(1px 1px at 60% 25%, rgba(255, 255, 255, 0.4) 100%, transparent),
-    radial-gradient(1px 1px at 40% 8%, rgba(255, 255, 255, 0.5) 100%, transparent);
-  background-size: 100% 100%;
-  animation: twinkle 4s ease-in-out infinite;
   pointer-events: none;
   z-index: 0;
 }
-@keyframes twinkle {
+
+:root.dark body::after {
+  background-image:
+    radial-gradient(7px 7px at 15% 20%, #fff 0%, #fff 12%, rgba(190, 210, 255, 0.45) 42%, transparent 75%),
+    radial-gradient(6px 6px at 68% 12%, #fff 0%, #fff 12%, rgba(255, 200, 235, 0.45) 42%, transparent 75%),
+    radial-gradient(6px 6px at 8% 60%, #fff 0%, #fff 12%, rgba(190, 210, 255, 0.4) 42%, transparent 75%),
+    radial-gradient(7px 7px at 52% 88%, #fff 0%, #fff 12%, rgba(220, 190, 255, 0.45) 42%, transparent 75%),
+    radial-gradient(5px 5px at 92% 82%, #fff 0%, #fff 12%, rgba(190, 210, 255, 0.4) 42%, transparent 75%),
+    radial-gradient(5px 5px at 40% 8%, #fff 0%, #fff 12%, rgba(255, 200, 235, 0.4) 42%, transparent 75%);
+  animation: sparkle-a 3.8s ease-in-out infinite;
+}
+:root.dark .sparkle-layer-b {
+  background-image:
+    radial-gradient(5px 5px at 32% 45%, #fff 0%, #fff 14%, rgba(255, 255, 255, 0.4) 42%, transparent 75%),
+    radial-gradient(6px 6px at 88% 30%, #fff 0%, #fff 14%, rgba(190, 210, 255, 0.4) 42%, transparent 75%),
+    radial-gradient(5px 5px at 25% 78%, #fff 0%, #fff 14%, rgba(255, 200, 235, 0.4) 42%, transparent 75%),
+    radial-gradient(6px 6px at 75% 66%, #fff 0%, #fff 14%, rgba(220, 190, 255, 0.4) 42%, transparent 75%),
+    radial-gradient(4px 4px at 60% 25%, #fff 0%, #fff 14%, rgba(190, 210, 255, 0.35) 42%, transparent 75%);
+  animation: sparkle-b 5s ease-in-out infinite;
+  animation-delay: 1.4s;
+}
+
+:root:not(.dark) body::after {
+  background-image:
+    radial-gradient(8px 8px at 15% 18%, #fff 0%, #fff 14%, rgba(255, 236, 168, 0.55) 42%, transparent 75%),
+    radial-gradient(7px 7px at 70% 10%, #fff 0%, #fff 14%, rgba(255, 200, 226, 0.55) 42%, transparent 75%),
+    radial-gradient(7px 7px at 10% 55%, #fff 0%, #fff 14%, rgba(255, 236, 168, 0.5) 42%, transparent 75%),
+    radial-gradient(8px 8px at 55% 85%, #fff 0%, #fff 14%, rgba(190, 235, 200, 0.55) 42%, transparent 75%),
+    radial-gradient(6px 6px at 90% 78%, #fff 0%, #fff 14%, rgba(255, 200, 226, 0.5) 42%, transparent 75%),
+    radial-gradient(6px 6px at 40% 6%, #fff 0%, #fff 14%, rgba(255, 236, 168, 0.45) 42%, transparent 75%);
+  animation: sparkle-a 4.2s ease-in-out infinite;
+}
+:root:not(.dark) .sparkle-layer-b {
+  background-image:
+    radial-gradient(6px 6px at 30% 42%, #fff 0%, #fff 16%, rgba(255, 200, 226, 0.45) 42%, transparent 75%),
+    radial-gradient(7px 7px at 85% 35%, #fff 0%, #fff 16%, rgba(190, 235, 200, 0.5) 42%, transparent 75%),
+    radial-gradient(6px 6px at 22% 80%, #fff 0%, #fff 16%, rgba(255, 236, 168, 0.45) 42%, transparent 75%),
+    radial-gradient(7px 7px at 72% 62%, #fff 0%, #fff 16%, rgba(255, 200, 226, 0.45) 42%, transparent 75%),
+    radial-gradient(5px 5px at 58% 22%, #fff 0%, #fff 16%, rgba(190, 235, 200, 0.4) 42%, transparent 75%);
+  animation: sparkle-b 5.4s ease-in-out infinite;
+  animation-delay: 1.7s;
+}
+
+@keyframes sparkle-a {
   0%,
   100% {
-    opacity: 0.8;
+    opacity: 0.85;
   }
   50% {
-    opacity: 0.4;
+    opacity: 0.3;
+  }
+}
+@keyframes sparkle-b {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.9;
   }
 }
 

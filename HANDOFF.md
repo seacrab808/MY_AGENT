@@ -7,6 +7,53 @@ _Last updated: 2026-07-30_
 
 ## Tried
 
+- **Fixed the background gradient "seam" on scroll, gave light mode its own spring-themed gradient (it had
+  none before), and made the twinkling dots look like glowing neon instead of flat dots**, all in
+  `globals.css`/`layout.tsx`:
+  - **Root cause of the seam**: `:root.dark body`'s gradient (and light mode had no gradient at all, just a
+    flat `background-color`) was a plain `background` on `body` with default `background-attachment: scroll`,
+    so its `at X% Y%` anchor points are positioned relative to the *whole document* box, not the viewport. On
+    any page taller than ~1 screen, most of the radial-gradients (sized 700-900px, anchored near y=0%/y=100%
+    of the *full* document) don't reach the vertical middle of a long page at all — scrolling into that
+    territory hits the flat fallback color with a visible hard edge where the gradient's falloff radius ends,
+    exactly the "뚝뚝 끊기는" cutoff being reported (visible in the user's attached dark-mode screenshot as a
+    lighter navy band cutting across the lower part of the page). Fix: added `background-attachment: fixed;`
+    to both mode's `body` background — this re-anchors the percentage positions to the *viewport* instead of
+    the document, so the exact same gradient is redrawn relative to whatever's currently visible at any scroll
+    position, and it can never "run out" no matter how long the page is. (The star/sparkle pseudo-element was
+    already `position: fixed`, which is a different, already-viewport-relative mechanism — it didn't have this
+    bug, only `body`'s own background did.)
+  - **New light-mode background** (`:root:not(.dark) body`): previously light mode had *no* gradient at all
+    (just flat `--pixel-bg` cream) — this was likely contributing to the "끊기는" complaint too (an abrupt cream
+    wall the moment you're off the mockup's original corner-glow idea, though that was dark-mode-only before).
+    Added 4 corner radial-gradients (pink top-left `#ffd3e8`, warm yellow top-right `#fff2ae`, mint-green
+    bottom-left `#c8f2cf`, peach bottom-right `#ffdcc2`) plus a soft white glow near center for the "햇살"
+    (sunlight) feel, colors picked to match the user's attached cherry-blossom/meadow/rainbow-field reference
+    images — same `background-attachment: fixed` treatment.
+  - **Stars/sparkles now glow instead of being flat dots, and twinkle out of sync with each other** (previously
+    a single `body::after` layer where *every* dot faded in perfect unison via one shared `twinkle` animation,
+    which reads as "the whole sky pulsing," not "stars twinkling individually"). Two changes: (1) each dot's
+    `radial-gradient` gained a soft halo stop (bright core 0-12% → tinted glow ring fading out by 75%, up from
+    a single hard-edged 100%→transparent stop) for a neon-bloom look; (2) split the sparkles into two
+    differently-positioned/differently-colored layers — the existing `body::after` (layer A) plus a new plain
+    `<div className="sparkle-layer-b" />` added in `layout.tsx` right before the content wrapper (layer B) —
+    each with its own animation (`sparkle-a`/`sparkle-b`) and a `1.4-1.7s` delay offset between them, so as one
+    layer's dots dim the other's brighten, giving an asynchronous "some sparkling now, others a beat later"
+    feel instead of one uniform pulse. Both layers are theme-aware via `:root.dark`/`:root:not(.dark)` on the
+    *same* two elements (no 4th element needed) — dark mode uses white/pale-blue/pale-pink "neon star" tints,
+    light mode uses white/pale-yellow/pale-peach/pale-mint "sunlight glint" tints, matching the respective
+    reference images (night-sky galaxy photos vs. spring floral photos).
+  - Verified visually, not just build/lint: used `npx playwright screenshot` (chromium had to be downloaded
+    first via `npx playwright install chromium`, not a project dependency, so this was a one-off manual check,
+    not something wired into CI) against the running local dev server's `/login` page (no auth needed since
+    `body`'s background is global, not gated behind login) in both `--color-scheme=light` and `--color-scheme
+    =dark`, confirming the corner-gradient colors, the glowing (not flat) dot appearance, and — via a taller
+    `--viewport-size` — that the gradient still fills corner-to-corner with no hard color band at the
+    boundary. Did **not** verify the actual left-to-right *twinkle desync timing* visually (a static screenshot
+    can't show animation timing; reasoned from the CSS `animation-delay` values instead) or re-check this on
+    the real logged-in Dashboard page (only `/login`, which shares the same global `body` background).
+  - `npx tsc --noEmit`, `npm run lint`, `npm run build` all pass clean.
+
 - **Followed the design-mockup zip's *actual code* more literally for the sidebar/calendar** (previous round
   had adapted the mockup loosely; this round the user pushed back — "코드도 줬잖아, 그대로 하면 되잖아" — so
   this pass reads `planner-app.js`'s `renderSidebar()` and `planner-pages.css`'s `.cal-cell`/`.progress-fill`

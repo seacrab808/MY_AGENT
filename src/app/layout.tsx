@@ -59,7 +59,10 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col">
-        {/* relative + z-index: 다크 모드의 고정(fixed) 별빛 배경(body::after) 위로 실제 콘텐츠가 올라오게 함 */}
+        {/* body::after와 시간차를 두고 반짝이는 두 번째 반짝임 레이어(globals.css의 .sparkle-layer-b) —
+            순수 장식용, 클릭/터치를 막지 않도록 aria-hidden + pointer-events:none */}
+        <div className="sparkle-layer-b" aria-hidden="true" />
+        {/* relative + z-index: 고정(fixed) 별빛/햇살 반짝임 배경 위로 실제 콘텐츠가 올라오게 함 */}
         <div className="relative z-[1] flex flex-col flex-1 min-h-full">{children}</div>
         <ServiceWorkerRegister />
       </body>
