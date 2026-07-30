@@ -7,6 +7,38 @@ _Last updated: 2026-07-30_
 
 ## Tried
 
+- Redesigned the daily planner's "오늘의 일정" list and reworked completion tracking end-to-end:
+  - **Removed the 세모(triangle) check state** — `EventCheckStatus` is now `"o" | "x"` only (was
+    `"o" | "triangle" | "x"`) in `src/types/event.ts`. `supabase/migrations/0006_event_sort_order.sql`
+    nulls out any leftover `'triangle'` rows (defensive; `0003_event_check_status.sql` likely hasn't even
+    been run yet per the pending-migrations list below, so this is mostly precautionary).
+  - **X is now a "reschedule", not just a completion flag.** Clicking X when unset opens
+    `RescheduleModal.tsx` with 4 options (내일/모레/다음 주 월요일/직접 선택, computed from the *viewed*
+    `dateKey`, not always today) — picking one marks the original event `check_status: 'x'` (it stays put,
+    struck through) **and** inserts a new copy of the event on the chosen date via the new
+    `rescheduleEvent()` in `src/lib/events.ts` (single-day only: `event_end_date` forced null, fresh
+    `check_status: null`). Clicking X again when already `'x'` just clears it (no popup) — same toggle-off
+    pattern as O.
+  - **Sorting**: `sortDailyEvents()` in `src/lib/events.ts` sorts unchecked-first, then `o`, then `x` last;
+    ties broken by a new `sort_order` int column (nullable, added in the same migration), falling back to
+    `created_at`.
+  - **Drag-to-reorder**: `TodayEventList.tsx` (new, replaces `EventList` for just this one call site in
+    `DailyPlannerTab.tsx`) implements reordering with plain HTML5 `draggable`/`onDragOver`/`onDrop` (no new
+    dependency, consistent with the existing attachment drag-drop in `EventDetailModal.tsx`). On drop, the
+    whole new order is renumbered 0..n-1 into `sort_order` via a new `reorderEvents()` bulk-update helper.
+    Since grouping (unchecked/o/x) is enforced by the sort function regardless of visual drop position,
+    dragging an item across a group boundary will "snap back" to its own group after re-sort — accepted
+    trade-off rather than building per-column drag zones.
+  - **Redesign**: `TodayEventList.tsx` rows are a single flat `div` (not the old button+sibling-buttons
+    split) so the drag handle, category chip, title/time, and O/X buttons are all one draggable unit, all
+    using `font-body` consistently (previously mixed `font-pixel`/`font-cute`/`font-body` in one row) for a
+    cleaner look, with a left accent border in the event's color and a grab-handle glyph (⠿).
+  - `EventList.tsx` was simplified back to a plain read-only list (check-button support removed) since
+    `DailyPlannerTab` was its only caller with `onSetCheckStatus` — `TodayPopup`/`WeeklyPopup`/`DayPopup`
+    never used that prop and are unaffected.
+  - Bar-style events (`isBarEvent()` — multi-day or `display_as_bar`) still show with no O/X buttons at all
+    in this list, per the existing rule from the previous round.
+
 - User reported the *same* `/api/chat` 401/502 happens on the Vercel deployment even though it works fine
   under `npm run dev` locally. Diagnosis (not yet confirmed against the actual Vercel project — no dashboard
   access from this environment): `.env.local` is git-ignored (correctly), so `GEMINI_API_KEY` /
@@ -100,16 +132,24 @@ _Last updated: 2026-07-30_
 
 ## Failed / blocked
 
-- **Three migration files have not been run against the live Supabase project yet, in this order:**
+- **Migration files have not been run against the live Supabase project yet, in this order** (check this
+  list at the start of every session — it only grows):
   1. `supabase/migrations/0001_event_attachments.sql` (attachment columns + storage bucket — needed for
      photo/file upload)
   2. `supabase/migrations/0002_vocab_groups_marks.sql` (vocab_groups table + group_id/is_starred/
      is_triangled columns — needed for vocab grouping/marking)
-  3. `supabase/migrations/0003_event_check_status.sql` (events.check_status column — needed for the new
-     O/△/X buttons in the daily planner)
+  3. `supabase/migrations/0003_event_check_status.sql` (events.check_status column — needed for the O/X
+     buttons in the daily planner)
+  4. `supabase/migrations/0004_routine_presets.sql` (routine_presets table — from a different session's
+     work on "하루 루틴" preset tab, not verified by this session)
+  5. `supabase/migrations/0005_event_bar_display.sql` (events.display_as_bar column — single-day events
+     shown as a calendar bar like a trip)
+  6. `supabase/migrations/0006_event_sort_order.sql` (events.sort_order column + nulls out any leftover
+     `'triangle'` check_status — needed for the new drag-to-reorder daily list)
 
-  Until the user runs all three, those features will error at the DB layer. **Check this first** if any of
-  attachments, vocab groups, or the O/△/X checks look broken next session.
+  Until the user runs all pending ones in order, those features will error at the DB layer. **Check this
+  first** if attachments, vocab groups, bar-style events, routine presets, or the O/X checks/reorder look
+  broken next session.
 - Did **not** build a true WYSIWYG rich-text editor with images embedded at the cursor position inside
   free-flowing memo text. Deliberately scoped down to: a drop-zone over the memo area that uploads images
   as separate resizable cards displayed alongside the memo text (not interleaved within it). This satisfies
@@ -124,11 +164,16 @@ _Last updated: 2026-07-30_
   out to be exactly this (user was on today, not on the trip's date range), not a data bug.
 - Vocab groups: did not add drag-to-reorder groups or bulk move-word-between-groups. Not asked for; flagging
   only so it isn't assumed done.
-- O/△/X checks were only wired into the daily planner's `EventList` (the specific place asked for), via a
-  new optional `onSetCheckStatus` prop on the shared `EventList` component. Monthly's `DayPopup` and the
-  notification popups (`TodayPopup`/`WeeklyPopup`) don't pass that prop yet, so they don't show the check
-  buttons — that's an easy follow-up (just pass the same handler through) if the user wants it everywhere,
-  but wasn't asked for this round.
+- O/X checks (and reorder/reschedule) are only in the daily planner's new `TodayEventList` (the specific
+  place asked for both times). Monthly's `DayPopup` and the notification popups (`TodayPopup`/
+  `WeeklyPopup`) still use the plain read-only `EventList` and don't show check buttons — not asked for,
+  flagging so it isn't assumed done.
+- Reschedule (X-check) only copies single-day fields — if the original event was itself somehow a bar/
+  range event, the new copy is forced single-day (`event_end_date: null`). Not expected to come up since
+  bar events don't show O/X buttons at all, but noting the assumption in case that invariant changes.
+- Drag-reorder writes `sort_order` as a flat 0..n-1 renumber of *all* currently-loaded day events on every
+  drop (simplest correct approach for a small per-day list) rather than a fractional-index insert — fine at
+  this scale, would need revisiting if a single day ever has very many events.
 
 ## Next steps (priority order)
 
@@ -145,12 +190,16 @@ _Last updated: 2026-07-30_
 3. **User needs to run all pending migration files** in the Supabase SQL Editor, in numeric order.
 4. Manually verify in a real browser once logged in: multi-day bar rendering across a month boundary, color
    picker, event edit/delete/duplicate, attachment upload/resize, vocab group create/rename/delete +
-   star/triangle quiz filtering, the O/△/X buttons in the daily planner, and the new create_routine_preset
-   chat flow (e.g. "월~금 오전 루틴에 ~ 추가해줘" should show up under "하루 루틴" tab, not as a calendar
-   event) — none of this has had human eyes on it yet, only automated build/lint checks + one isolated
-   Gemini function-calling script.
+   star/triangle quiz filtering, and the new create_routine_preset chat flow (e.g. "월~금 오전 루틴에 ~
+   추가해줘" should show up under "하루 루틴" tab, not as a calendar event) — none of this has had human
+   eyes on it yet, only automated build/lint checks + one isolated Gemini function-calling script.
+4b. Specifically verify the new daily-planner list once `0006_event_sort_order.sql` is run: O/X toggle,
+   X → reschedule modal (내일/모레/다음 주 월요일/직접 선택) actually inserts a new event on the picked
+   date, drag-and-drop reorder persists after a page refresh, and unchecked/O/X groups sink in the right
+   order.
 5. If the user wants true inline (cursor-position) image embedding in memos instead of the current
    below-text resizable-card gallery, that's a scope decision to raise with them before implementing — see
    "Failed / blocked" above.
-6. If the user wants O/△/X checks in Monthly's day popup or the notification popups too, wire the same
-   `onSetCheckStatus` handler pattern used in `DailyPlannerTab.tsx` into those call sites.
+6. If the user wants O/X checks in Monthly's day popup or the notification popups too, port the
+   `TodayEventList`/`RescheduleModal` pattern used in `DailyPlannerTab.tsx` into those call sites (they
+   currently use the plain read-only `EventList`).

@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import { addDays, format, isToday, subDays } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
-import { fetchEventsForRange, setEventCheckStatus } from "@/lib/events";
+import { fetchEventsForRange, reorderEvents, rescheduleEvent, setEventCheckStatus } from "@/lib/events";
 import { toDateKey, ENGLISH_WEEKDAY } from "@/lib/date";
 import { PixelCard } from "@/components/ui/PixelCard";
 import { PixelIconButton } from "@/components/ui/PixelIconButton";
 import { PixelButton } from "@/components/ui/PixelButton";
 import { PixelModal } from "@/components/ui/PixelModal";
-import { EventList } from "@/components/calendar/EventList";
+import { TodayEventList } from "@/components/calendar/TodayEventList";
 import { AddEventModal } from "@/components/calendar/AddEventModal";
 import { EventDetailModal } from "@/components/calendar/EventDetailModal";
 import { MiniDatePicker } from "@/components/calendar/MiniDatePicker";
@@ -39,6 +39,21 @@ export function DailyPlannerTab({ userId }: DailyPlannerTabProps) {
     setEvents((prev) => prev.map((e) => (e.id === event.id ? { ...e, check_status: status } : e)));
     const supabase = createClient();
     setEventCheckStatus(supabase, event.id, status);
+  }
+
+  async function handleReschedule(event: PlannerEvent, newDateKey: string) {
+    handleSetCheckStatus(event, "x");
+    const supabase = createClient();
+    const { event: created } = await rescheduleEvent(supabase, event, newDateKey);
+    if (created && newDateKey === dateKey) {
+      setEvents((prev) => [...prev, created]);
+    }
+  }
+
+  function handleReorder(orderedEvents: PlannerEvent[]) {
+    setEvents(orderedEvents);
+    const supabase = createClient();
+    reorderEvents(supabase, orderedEvents.map((e) => e.id));
   }
 
   return (
@@ -102,10 +117,13 @@ export function DailyPlannerTab({ userId }: DailyPlannerTabProps) {
             + 추가
           </PixelButton>
         </div>
-        <EventList
+        <TodayEventList
+          dateKey={dateKey}
           events={events}
           onSelect={setSelectedEvent}
           onSetCheckStatus={handleSetCheckStatus}
+          onReschedule={handleReschedule}
+          onReorder={handleReorder}
         />
       </PixelCard>
 

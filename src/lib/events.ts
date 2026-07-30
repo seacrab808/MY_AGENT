@@ -44,6 +44,24 @@ export function eventDateKeys(event: PlannerEvent): string[] {
   }).map(toDateKey);
 }
 
+// 일일 플래너 "오늘의 일정" 정렬: 미체크가 맨 위, O가 그 아래, X가 맨 아래. 같은 그룹 안에서는
+// sort_order(드래그로 정한 순서) 우선, 없으면 등록 시각(created_at) 순서로 대체
+function checkStatusRank(status: PlannerEvent["check_status"]): number {
+  if (status === "o") return 1;
+  if (status === "x") return 2;
+  return 0;
+}
+
+export function sortDailyEvents(events: PlannerEvent[]): PlannerEvent[] {
+  return [...events].sort((a, b) => {
+    const rankDiff = checkStatusRank(a.check_status) - checkStatusRank(b.check_status);
+    if (rankDiff !== 0) return rankDiff;
+    const orderDiff = (a.sort_order ?? 0) - (b.sort_order ?? 0);
+    if (orderDiff !== 0) return orderDiff;
+    return a.created_at.localeCompare(b.created_at);
+  });
+}
+
 export function groupEventsByDate(events: PlannerEvent[]): Record<string, PlannerEvent[]> {
   return events.reduce<Record<string, PlannerEvent[]>>((acc, event) => {
     for (const dateKey of eventDateKeys(event)) {
@@ -197,6 +215,7 @@ export type UpdateEventInput = Partial<
     | "visibility"
     | "check_status"
     | "display_as_bar"
+    | "sort_order"
   >
 >;
 
@@ -221,6 +240,51 @@ export async function setEventCheckStatus(
   checkStatus: PlannerEvent["check_status"],
 ): Promise<{ event: PlannerEvent | null; error: string | null }> {
   return updateEvent(supabase, id, { check_status: checkStatus });
+}
+
+// 드래그로 정한 새 순서를 그룹 내 상대 순서(sort_order)로 저장. orderedIds는 화면에 보이는 순서 그대로.
+export async function reorderEvents(supabase: SupabaseClient, orderedIds: string[]): Promise<string | null> {
+  const results = await Promise.all(
+    orderedIds.map((id, index) => supabase.from("events").update({ sort_order: index }).eq("id", id)),
+  );
+  const failed = results.find((r) => r.error);
+  if (failed?.error) {
+    console.error(failed.error);
+    return "순서 저장에 실패했어요.";
+  }
+  return null;
+}
+
+// X 체크(미루기): 오늘 일정은 그대로 두고(호출부에서 check_status를 'x'로 표시), 고른 날짜에 새 일정을 등록
+export async function rescheduleEvent(
+  supabase: SupabaseClient,
+  event: PlannerEvent,
+  newDate: string,
+): Promise<{ event: PlannerEvent | null; error: string | null }> {
+  const { data, error } = await supabase
+    .from("events")
+    .insert({
+      user_id: event.user_id,
+      title: event.title,
+      event_date: newDate,
+      event_end_date: null,
+      event_time: event.event_time,
+      end_time: event.end_time,
+      description: event.description,
+      category: event.category,
+      color: event.color,
+      visibility: event.visibility,
+      display_as_bar: false,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error(error);
+    return { event: null, error: "일정 미루기에 실패했어요." };
+  }
+
+  return { event: data as PlannerEvent, error: null };
 }
 
 export async function deleteEvent(supabase: SupabaseClient, id: string): Promise<string | null> {
