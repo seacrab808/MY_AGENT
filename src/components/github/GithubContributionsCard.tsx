@@ -140,32 +140,38 @@ export function GithubContributionsCard({ userId, onConnectClick }: GithubContri
           </p>
 
           <div className="overflow-x-auto pb-1">
-            <div className="inline-flex flex-col gap-1 min-w-max">
-              <div className="flex gap-[3px] pl-[1px]">
-                {weeks.map((week, i) => (
-                  <div key={i} className="w-[11px] shrink-0 font-body text-[10px] text-pixel-ink-soft">
-                    {weekMonthLabel(week) ?? ""}
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-[3px]">
-                {weeks.map((week, wi) => (
-                  <div key={wi} className="flex flex-col gap-[3px] shrink-0">
-                    {Array.from({ length: 7 }).map((_, di) => {
-                      const day = week[di];
-                      if (!day) return <div key={di} className="w-[11px] h-[11px]" />;
-                      return (
-                        <div
-                          key={day.date}
-                          title={`${day.date} · ${day.count}회 커밋`}
-                          className="w-[11px] h-[11px] rounded-[3px]"
-                          style={{ backgroundColor: `var(--contrib-${day.level})` }}
-                        />
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
+            {/* 주(week) 개수만큼 열을 만들고 각 열이 1fr로 남는 폭을 나눠 가지도록 해서 카드 폭에
+                꽉 차게 늘어나되(min 9px), 화면이 너무 좁으면 그 밑으로는 안 줄고 가로 스크롤됨 */}
+            <div
+              className="grid gap-[3px] pl-[1px] mb-1 min-w-full"
+              style={{ gridTemplateColumns: `repeat(${weeks.length}, minmax(9px, 1fr))` }}
+            >
+              {weeks.map((week, i) => (
+                <div key={i} className="font-body text-[10px] text-pixel-ink-soft truncate">
+                  {weekMonthLabel(week) ?? ""}
+                </div>
+              ))}
+            </div>
+            <div
+              className="grid gap-[3px] min-w-full"
+              style={{ gridTemplateColumns: `repeat(${weeks.length}, minmax(9px, 1fr))` }}
+            >
+              {weeks.map((week, wi) => (
+                <div key={wi} className="flex flex-col gap-[3px]">
+                  {Array.from({ length: 7 }).map((_, di) => {
+                    const day = week[di];
+                    if (!day) return <div key={di} className="w-full aspect-square" />;
+                    return (
+                      <div
+                        key={day.date}
+                        title={`${day.date} · ${day.count}회 커밋`}
+                        className="w-full aspect-square rounded-[3px]"
+                        style={{ backgroundColor: `var(--contrib-${day.level})` }}
+                      />
+                    );
+                  })}
+                </div>
+              ))}
             </div>
           </div>
 

@@ -7,6 +7,20 @@ _Last updated: 2026-07-30_
 
 ## Tried
 
+- **GitHub 잔디 grid now stretches to fill the card's full width**, instead of staying a fixed 11px-per-cell
+  size and leaving empty space on a wide card. `GithubContributionsCard.tsx`'s week-label row and day-grid
+  both switched from a `flex`/`inline-flex` layout with hardcoded `w-[11px] h-[11px]` cells to a CSS `grid`
+  with `gridTemplateColumns: repeat(weeks.length, minmax(9px, 1fr))` (set via inline `style` since the column
+  count is dynamic/data-dependent, not a fixed Tailwind class) — each week-column grows to fill available
+  width via `1fr` down to a 9px floor, and each day cell is `w-full aspect-square` so it stays a square while
+  tracking the column's width (this also means cell height, not just width, now grows on a wide screen — the
+  whole grid gets visually chunkier/fuller, not just wider with the same tiny squares). `overflow-x-auto` is
+  kept on the wrapper as a narrow-screen fallback: once the sum of 9px minimums exceeds the container width,
+  the grid overflows and scrolls horizontally instead of squishing cells below a readable size, same
+  safety net as before, it just doesn't kick in until much narrower now. `npx tsc --noEmit`, `npm run lint`,
+  `npm run build` all pass clean. Not manually browser-tested (exact fill behavior at various card widths,
+  and that cells don't get too tall/blocky on a very wide monitor) — build/lint-checked only.
+
 - **4 smaller fixes/additions from the same design-mockup zip, in one batch**: starry dark-mode background,
   a sticky sidebar, a year/month picker on the monthly calendar, and a vocab flip-card bug fix.
   - **Dark-mode "starry night" background**, ported near-verbatim from the mockup's `planner.css`
