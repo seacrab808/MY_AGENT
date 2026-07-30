@@ -40,6 +40,7 @@ export function EventForm({ userId, onSaved, onCancel, dateKey, visibility, init
   const [endTime, setEndTime] = useState(initialEvent?.end_time?.slice(0, 5) ?? "");
   const [category, setCategory] = useState<EventCategory>(initialEvent?.category ?? "general");
   const [color, setColor] = useState<string>(initialEvent?.color ?? PASTEL_COLOR_PRESETS[0].value);
+  const [displayAsBar, setDisplayAsBar] = useState(Boolean(initialEvent?.display_as_bar));
   const [description, setDescription] = useState(initialEvent?.description ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,6 +64,7 @@ export function EventForm({ userId, onSaved, onCancel, dateKey, visibility, init
       description: description.trim() || null,
       category,
       color,
+      display_as_bar: isRange ? true : displayAsBar,
     };
 
     const { event, error: err } = isEdit
@@ -90,6 +92,23 @@ export function EventForm({ userId, onSaved, onCancel, dateKey, visibility, init
         <input type="checkbox" checked={isRange} onChange={(e) => setIsRange(e.target.checked)} />
         여러 날에 걸친 일정이에요 (여행 등)
       </label>
+
+      <label
+        className={`flex items-center gap-2 font-body text-sm ${isRange ? "opacity-50" : "cursor-pointer"}`}
+      >
+        <input
+          type="checkbox"
+          checked={isRange || displayAsBar}
+          disabled={isRange}
+          onChange={(e) => setDisplayAsBar(e.target.checked)}
+        />
+        하루짜리여도 캘린더에 바 형태로 표시할게요 (여행처럼)
+      </label>
+      {(isRange || displayAsBar) && (
+        <p className="font-body text-xs text-pixel-ink-soft -mt-2">
+          바 형태 일정은 일일 플래너에서 완료 체크(O/△/X) 없이 그냥 일정으로만 표시돼요.
+        </p>
+      )}
 
       <div className="flex items-center gap-2">
         <PixelInput

@@ -1,5 +1,5 @@
 import type { EventCheckStatus, PlannerEvent } from "@/types/event";
-import { categoryLabel, eventColor } from "@/lib/events";
+import { categoryLabel, eventColor, isBarEvent } from "@/lib/events";
 
 const CHECK_OPTIONS: { value: EventCheckStatus; label: string; activeClass: string }[] = [
   { value: "o", label: "O", activeClass: "bg-pixel-mint text-pixel-chip-ink" },
@@ -50,7 +50,7 @@ export function EventList({ events, onSelect, onSetCheckStatus }: EventListProps
           </>
         );
 
-        const checkButtons = onSetCheckStatus && (
+        const checkButtons = onSetCheckStatus && !isBarEvent(event) && (
           <div className="flex items-center gap-1 shrink-0">
             {CHECK_OPTIONS.map((opt) => (
               <button

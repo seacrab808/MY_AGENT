@@ -18,7 +18,7 @@ import {
   subMonths,
 } from "date-fns";
 import { toDateKey } from "@/lib/date";
-import { eventColor, filterEventsForTab, groupEventsByDate } from "@/lib/events";
+import { eventColor, filterEventsForTab, groupEventsByDate, isBarEvent } from "@/lib/events";
 import type { PlannerEvent } from "@/types/event";
 import { PixelCard } from "@/components/ui/PixelCard";
 import { PixelIconButton } from "@/components/ui/PixelIconButton";
@@ -34,28 +34,29 @@ interface BarSegment {
   roundedRight: boolean;
 }
 
-function isMultiDay(event: PlannerEvent): boolean {
-  return Boolean(event.event_end_date) && event.event_end_date !== event.event_date;
+// 바 형태 일정의 (표시상) 종료일: 실제 여러 날 일정이면 event_end_date, 하루짜리 바 일정이면 event_date와 동일
+function barEndDate(event: PlannerEvent): string {
+  return event.event_end_date ?? event.event_date;
 }
 
 function computeWeekBars(weekStart: Date, weekEnd: Date, events: PlannerEvent[]): BarSegment[] {
   const overlapping = events
-    .filter(isMultiDay)
+    .filter(isBarEvent)
     .filter((event) => {
       const start = parseISO(event.event_date);
-      const end = parseISO(event.event_end_date as string);
+      const end = parseISO(barEndDate(event));
       return end >= weekStart && start <= weekEnd;
     })
     .sort((a, b) => {
       if (a.event_date !== b.event_date) return a.event_date.localeCompare(b.event_date);
-      return (b.event_end_date as string).localeCompare(a.event_end_date as string);
+      return barEndDate(b).localeCompare(barEndDate(a));
     });
 
   const segments: BarSegment[] = [];
 
   for (const event of overlapping) {
     const eventStart = parseISO(event.event_date);
-    const eventEnd = parseISO(event.event_end_date as string);
+    const eventEnd = parseISO(barEndDate(event));
     const clippedStart = maxDate([eventStart, weekStart]);
     const clippedEnd = minDate([eventEnd, weekEnd]);
     const startCol = differenceInCalendarDays(clippedStart, weekStart) + 1;
@@ -139,7 +140,7 @@ export function MonthCalendar({ monthDate, onMonthChange, events, onSelectDate }
               <div className="grid grid-cols-7 gap-1">
                 {weekDays.map((day) => {
                   const dateKey = toDateKey(day);
-                  const dotEvents = (monthEventsByDate[dateKey] ?? []).filter((e) => !isMultiDay(e));
+                  const dotEvents = (monthEventsByDate[dateKey] ?? []).filter((e) => !isBarEvent(e));
                   const inMonth = isSameMonth(day, monthDate);
                   const todayFlag = isToday(day);
 

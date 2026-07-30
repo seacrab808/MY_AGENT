@@ -26,6 +26,14 @@ export async function fetchEventsForRange(
   return data as PlannerEvent[];
 }
 
+// 여러 날에 걸친 일정이거나, 하루짜리여도 display_as_bar가 켜져 있으면 월간 캘린더에 바 형태로 표시
+export function isBarEvent(
+  event: Pick<PlannerEvent, "event_date" | "event_end_date" | "display_as_bar">,
+): boolean {
+  const isRange = Boolean(event.event_end_date) && event.event_end_date !== event.event_date;
+  return isRange || Boolean(event.display_as_bar);
+}
+
 export function eventDateKeys(event: PlannerEvent): string[] {
   if (!event.event_end_date || event.event_end_date === event.event_date) {
     return [event.event_date];
@@ -141,6 +149,7 @@ export interface CreateEventInput {
   category?: EventCategory;
   color?: string | null;
   visibility: EventVisibility;
+  display_as_bar?: boolean;
 }
 
 export async function createEvent(
@@ -161,6 +170,7 @@ export async function createEvent(
       category,
       color: input.color || null,
       visibility: input.visibility,
+      display_as_bar: input.display_as_bar ?? false,
     })
     .select()
     .single();
@@ -186,6 +196,7 @@ export type UpdateEventInput = Partial<
     | "color"
     | "visibility"
     | "check_status"
+    | "display_as_bar"
   >
 >;
 
@@ -238,6 +249,7 @@ export async function duplicateEvent(
       category: event.category,
       color: event.color,
       visibility: event.visibility,
+      display_as_bar: event.display_as_bar,
     })
     .select()
     .single();
