@@ -2,6 +2,7 @@
 
 import { MonthCalendar } from "@/components/calendar/MonthCalendar";
 import { DayPopup } from "@/components/calendar/DayPopup";
+import { GithubContributionsCard } from "@/components/github/GithubContributionsCard";
 import { PixelCard } from "@/components/ui/PixelCard";
 import { TodoList } from "@/components/todo/TodoList";
 import { monthKey } from "@/lib/period";
@@ -36,12 +37,15 @@ export function MonthlyTab({
 }: MonthlyTabProps) {
   return (
     <div className="grid lg:grid-cols-[1.4fr_1fr] gap-4 items-start">
-      <MonthCalendar
-        monthDate={monthDate}
-        onMonthChange={onMonthChange}
-        events={events}
-        onSelectDate={onSelectDate}
-      />
+      <div className="flex flex-col gap-4 min-w-0">
+        <MonthCalendar
+          monthDate={monthDate}
+          onMonthChange={onMonthChange}
+          events={events}
+          onSelectDate={onSelectDate}
+        />
+        <GithubContributionsCard />
+      </div>
 
       <PixelCard>
         <h2 className="font-cute text-2xl mb-2">📝 이달의 TODO</h2>
