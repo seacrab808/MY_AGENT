@@ -58,9 +58,15 @@ export function DailyPlannerTab({ userId }: DailyPlannerTabProps) {
   }
 
   function handleReorder(orderedEvents: PlannerEvent[]) {
-    setEvents(orderedEvents);
+    // orderedEvents는 화면에 보이는 새 순서 그대로지만, 각 이벤트 객체 자체의 sort_order 값은 아직
+    // 예전 값 그대로임. TodayEventList가 매번 sortDailyEvents(events)로 다시 정렬하기 때문에, 배열
+    // "순서"만 바꾸고 sort_order를 안 갱신하면 재정렬 시 옛 sort_order 기준으로 다시 섞여서 드래그
+    // 결과가 즉시 원위치로 튕겨 보임(드래그가 "안 되는" 것처럼 보이던 원인). 여기서 인덱스를 그대로
+    // sort_order로 박아 넣어야 재정렬 결과가 방금 놓은 순서와 일치함.
+    const withSortOrder = orderedEvents.map((e, i) => ({ ...e, sort_order: i }));
+    setEvents(withSortOrder);
     const supabase = createClient();
-    reorderEvents(supabase, orderedEvents.map((e) => e.id));
+    reorderEvents(supabase, withSortOrder.map((e) => e.id));
   }
 
   // 바(여행 등) 일정은 O/X 버튼이 없어서 완료 여부를 매길 수 없으니 진행률 계산에서 뺌

@@ -73,7 +73,10 @@ export function MonthlyTab({
 
       <GithubContributionsCard userId={userId} onConnectClick={onGoToAccount} />
 
-      <div className="grid lg:grid-cols-2 gap-4 items-start">
+      {/* items-start를 안 주면 grid 기본값(stretch)이 적용돼서 두 카드가 항상 더 긴 쪽 높이에 맞춰
+          똑같이 늘어남 — 내용이 적을 땐 높이가 딱 맞고, 나중에 한쪽에 내용이 많아지면 그쪽 기준으로
+          같이 늘어나되 다른 카드는 그 높이만큼 여백이 남는 정도라 자연스러움 */}
+      <div className="grid lg:grid-cols-2 gap-4">
         <PixelCard tape="pink">
           <h2 className="font-cute text-2xl mb-2">📝 이달의 TODO</h2>
           <TodoList userId={userId} scope="month" periodKey={monthPeriodKey} showProgress />

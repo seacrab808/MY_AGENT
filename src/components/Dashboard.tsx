@@ -103,7 +103,9 @@ export function Dashboard({
           greeting={greeting}
         />
 
-        <div className="flex-1 min-w-0 w-full">
+        {/* md 이상에서는 Sidebar가 position:fixed라 flex 흐름에서 빠지므로, gap-4가 만들어주던
+            자리를 md:pl-[16rem](사이드바 폭 15rem + gap 1rem)로 직접 비워줌 */}
+        <div className="flex-1 min-w-0 w-full md:pl-[16rem]">
           {activeTab === "monthly" && (
             <MonthlyTab
               userId={userId}

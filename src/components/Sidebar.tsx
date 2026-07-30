@@ -18,7 +18,15 @@ export function Sidebar({ active, onChange, displayName, greeting }: SidebarProp
   return (
     // 디자인 목업의 .sidebar처럼 프로필/nav/마스코트를 각각 따로 뜬 카드로 두지 않고,
     // 하나의 패널 div 안에 전부 넣고 대시선/여백으로만 구역을 나눔.
-    <div className="w-full md:w-60 shrink-0 md:sticky md:top-4 md:self-start md:h-[calc(100vh-2rem)] md:overflow-y-auto md:overflow-x-hidden bg-pixel-panel border-2 border-pixel-border rounded-[24px] shadow-[var(--pixel-shadow)] p-4 flex flex-col gap-3">
+    // md 이상에서는 position: sticky 대신 진짜 position: fixed를 씀 — sticky는 "가장 가까운 스크롤
+    // 컨테이너"가 무엇인지에 따라 미묘하게 안 먹는 경우가 있는데(overflow-x:hidden이 body/html에
+    // 걸려 있어서 실제 스크롤이 어느 쪽에서 일어나는지가 불명확해짐), fixed는 그런 것과 무관하게
+    // 무조건 뷰포트 기준으로 고정됨. 대신 fixed는 문서 흐름에서 완전히 빠지므로 원래 flex 레이아웃이
+    // 잡아주던 가로 위치(왼쪽에서부터 max-w-7xl mx-auto + p-4만큼 들어간 자리)를 left로 직접 계산해서
+    // 맞춰줘야 함 — Dashboard.tsx의 바깥 컨테이너가 정확히 그 수식(max-w-7xl mx-auto p-4)이라
+    // left도 똑같은 수식(뷰포트가 좁으면 1rem, 넓으면 가운데 정렬된 여백 + 1rem)으로 따라감.
+    // 오른쪽 본문 영역은 Dashboard.tsx에서 sidebar 너비+gap만큼 md:pl-[16rem]으로 비워둠.
+    <div className="w-full md:w-60 shrink-0 md:fixed md:top-4 md:left-[max(1rem,calc((100vw-80rem)/2+1rem))] md:z-10 md:h-[calc(100vh-2rem)] md:overflow-y-auto md:overflow-x-hidden bg-pixel-panel border-2 border-pixel-border rounded-[24px] shadow-[var(--pixel-shadow)] p-4 flex flex-col gap-3">
       {/* 브랜드: 아바타 + 이름 + 다크모드 토글 */}
       <div className="flex items-center gap-2.5 pb-3 border-b-2 border-dashed border-pixel-border">
         <span

@@ -7,6 +7,58 @@ _Last updated: 2026-07-30_
 
 ## Tried
 
+- **Fixed the daily-planner drag-to-reorder actually doing nothing, matched the monthly TODO/회고 card
+  heights, and swapped the sidebar from `position: sticky` to a real `position: fixed`**:
+  - **Root cause of "drag-to-reorder doesn't work" (a real logic bug, not a missing-migration issue)**:
+    `DailyPlannerTab.tsx`'s `handleReorder(orderedEvents)` did `setEvents(orderedEvents)` — this updates the
+    *array order* in local state, but each individual event object inside that array still carried its *old*
+    `sort_order` value (only `TodayEventList.tsx`'s local drag-drop splice reordered the array positions; it
+    never touched each event's own `sort_order` field). Since `TodayEventList` re-derives what to render via
+    `useMemo(() => sortDailyEvents(events), [events])` on *every* `events` change — and `sortDailyEvents` sorts
+    strictly by `check_status` group then by each item's own `sort_order`/`created_at`, ignoring array order
+    entirely — the very next render re-sorted by the stale `sort_order` values and snapped the list right back
+    to (approximately) its pre-drag order, immediately after the drop. This is why it looked like dragging
+    "did nothing" even within the same session, independent of whether `0006_event_sort_order.sql` has been
+    run against the live DB yet. **Fix**: `handleReorder` now does
+    `orderedEvents.map((e, i) => ({ ...e, sort_order: i }))` before calling `setEvents`, so the in-memory
+    `sort_order` matches the just-dropped order exactly — re-sorting reproduces the same order instead of
+    reverting. The `reorderEvents(supabase, ids)` persistence call (unchanged) still needs
+    `0006_event_sort_order.sql` run for the reorder to *survive a page reload*; this fix only addresses the
+    in-session "snaps back immediately" symptom, which is what was reported.
+  - **"이달의 TODO"/"이달의 회고" cards now match height by default**: `MonthlyTab.tsx`'s
+    `<div className="grid lg:grid-cols-2 gap-4 items-start">` had `items-start`, which makes each grid cell
+    size to its *own* content height (`TodoList` vs. a fixed `rows={10}` textarea — different natural
+    heights). Removed `items-start` so the grid falls back to its default `align-items: stretch`, making both
+    cards stretch to match the *taller* of the two — matches the ask ("높이 맞춰주라... 사용자가 쓰기
+    시작하면 높이 달라져도 상관없다"): equal by default, and if one genuinely grows taller than the other
+    later, `stretch` still keeps both card *borders* equal height (just with blank space in the shorter one's
+    content area) rather than looking mismatched.
+  - **Sidebar switched from `md:sticky` to a real `md:fixed`**, per explicit user suggestion. Root cause of why
+    sticky wasn't reliably staying put wasn't fully nailed down (never reproduced live in this environment —
+    no login creds), but the leading suspect is that `body`/`html` both have `overflow-x: hidden` in
+    `globals.css`, which per spec forces the *other* axis's computed `overflow` to `auto` even though it was
+    never explicitly set — this can make it ambiguous which ancestor (`html` vs. `body`) is actually the
+    "nearest scrolling ancestor" that `position: sticky` anchors against, and sticky is known to behave
+    inconsistently when that's unclear. `position: fixed` sidesteps this entirely (always anchors to the
+    viewport, full stop, regardless of any ancestor's overflow computation) — which is exactly why the user's
+    own suggestion is the more robust fix, not just a simpler one. Implementation: `Sidebar.tsx`'s outer div
+    is now `md:fixed md:top-4 md:left-[max(1rem,calc((100vw-80rem)/2+1rem))] md:z-10` (was
+    `md:sticky md:top-4 md:self-start`) — the `left` expression re-derives exactly where the sidebar would have
+    sat inside `Dashboard.tsx`'s `max-w-7xl mx-auto p-4` centered container (viewport narrower than 80rem+
+    padding → flush against the 1rem page padding; wider → centered container's own left margin + 1rem),
+    since a truly-fixed element can no longer rely on the normal flex-flow to position it horizontally.
+    Because `position: fixed` removes the sidebar from flex flow entirely (unlike `sticky`, which stays "in
+    flow" for layout purposes), `Dashboard.tsx`'s main-content column gained `md:pl-[16rem]` (sidebar's
+    `w-60`/15rem + the row's old `gap-4`/1rem) to keep reserving the same horizontal space that flex + gap used
+    to reserve automatically. Verified `PixelModal`'s overlay is `z-50` (well above the sidebar's new `z-10`),
+    so open modals still correctly render on top of the now-fixed sidebar. Mobile (`<md`) is unaffected — all
+    the new positioning classes are `md:`-prefixed, same as the sticky version they replaced.
+  - `npx tsc --noEmit`, `npm run lint`, `npm run build` all pass clean. Not manually browser-tested (dragging
+    an item and confirming it stays put without a page refresh, the two monthly cards actually rendering
+    equal height with little content in each, and the sidebar staying visually pinned to the exact same
+    spot while scrolling a long page at both a wide and a ~mobile-breakpoint-adjacent width) — build/lint
+    only, no login creds in this environment.
+
 - **Fixed the daily planner's date header not centering (real root cause found, not a CSS tweak),
   restyled the last remaining old-"pixel-game"-style buttons in the vocab tab, and matched 이번 주 목표's
   style to 이번주 TODO's**:
@@ -774,6 +826,14 @@ _Last updated: 2026-07-30_
 
 ## Next steps (priority order)
 
+-6. Not manually browser-tested (this session's latest batch): drag a daily-planner "오늘의 일정" item and
+   confirm it stays in the dropped position (not just during the drag, *after* releasing) — including a page
+   refresh afterward to confirm it persisted (needs `0006_event_sort_order.sql` run first, see "Failed /
+   blocked" below); the monthly tab's "이달의 TODO"/"이달의 회고" cards rendering equal height at a desktop
+   width with little content in each; and the sidebar staying visually pinned in the exact same spot on
+   screen while scrolling a long page (both at a wide desktop width and near the `md` breakpoint, confirming
+   it correctly reverts to normal in-flow stacking below `md`, not fixed) — the `left` calc in particular
+   should be double-checked against the actual rendered position, not just reasoned about algebraically.
 -5. Not manually browser-tested (this session's batch): the dark-mode starry background (toggle to dark mode
    and confirm the navy/purple gradient + twinkling stars render, and that page content still sits visibly
    above the fixed star layer, not behind it), the sidebar staying fixed while scrolling a long page on a
