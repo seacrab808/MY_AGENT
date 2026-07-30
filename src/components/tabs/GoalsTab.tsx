@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { addQuarters, addYears, subQuarters, subYears } from "date-fns";
-import { quarterKey, yearKey } from "@/lib/period";
+import { addYears, subYears } from "date-fns";
+import { quarterKey, quarterLabel, shiftQuarter, yearKey } from "@/lib/period";
 import { PixelCard } from "@/components/ui/PixelCard";
 import { PixelIconButton } from "@/components/ui/PixelIconButton";
 import { GoalList } from "@/components/goal/GoalList";
@@ -41,9 +41,9 @@ export function GoalsTab({ userId }: GoalsTabProps) {
     <div className="grid lg:grid-cols-2 gap-4 items-start">
       <PixelCard>
         <NavHeader
-          title={`${qKey} 목표`}
-          onPrev={() => setQuarterAnchor((d) => subQuarters(d, 1))}
-          onNext={() => setQuarterAnchor((d) => addQuarters(d, 1))}
+          title={`${quarterLabel(quarterAnchor)} 목표`}
+          onPrev={() => setQuarterAnchor((d) => shiftQuarter(d, -1))}
+          onNext={() => setQuarterAnchor((d) => shiftQuarter(d, 1))}
         />
         <div className="flex flex-col gap-4">
           <div>
