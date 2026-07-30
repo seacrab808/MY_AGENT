@@ -1,17 +1,118 @@
 "use client";
 
 import { FormEvent, useState, type CSSProperties } from "react";
+import { format, parseISO } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
+import { toDateKey, KOREAN_WEEKDAY } from "@/lib/date";
 import { CATEGORY_COLOR_HEX, categoryLabel, createEvent, updateEvent } from "@/lib/events";
 import type { EventCategory, EventVisibility, PlannerEvent } from "@/types/event";
 import { PixelInput } from "@/components/ui/PixelInput";
 import { PixelButton } from "@/components/ui/PixelButton";
 import { PixelCheckbox } from "@/components/ui/PixelCheckbox";
+import { PixelModal } from "@/components/ui/PixelModal";
+import { MiniDatePicker } from "@/components/calendar/MiniDatePicker";
 
 const CATEGORY_OPTIONS: EventCategory[] = ["general", "travel", "important", "meeting", "conference"];
 
 // PixelInput 등 공용 컴포넌트는 font-body가 기본이라, 이 폼 안에서만 귀여운 손글씨 폰트로 강제 override
 const CUTE_FONT: CSSProperties = { fontFamily: "var(--font-cute)" };
+
+// 나머지 폼 요소(PixelInput 등)와 톤을 맞춘 날짜/시간 필드 전용 스타일.
+// 어차피 나중에 전체 디자인을 다시 손볼 예정이라, 딱 지금 스타일과 비슷하게만 맞춰둠.
+const FIELD_BASE_CLASS =
+  "border-[3px] border-pixel-border rounded-[10px] bg-pixel-bg text-pixel-ink shadow-[inset_2px_2px_0_0_rgba(0,0,0,0.12)] focus:outline-none focus:ring-2 focus:ring-pixel-blue";
+
+function formatDateLabel(dateKey: string): string {
+  if (!dateKey) return "날짜 선택";
+  const d = parseISO(dateKey);
+  return `${format(d, "yyyy년 M월 d일")} (${KOREAN_WEEKDAY[d.getDay()]})`;
+}
+
+interface DateFieldProps {
+  value: string;
+  onSelect: (dateKey: string) => void;
+  disabled?: boolean;
+  min?: string;
+  className?: string;
+}
+
+// 브라우저 기본 <input type="date"> 대신, 앱 톤에 맞춘 MiniDatePicker를 모달로 띄워서 선택
+function DateField({ value, onSelect, disabled, min, className = "" }: DateFieldProps) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen(true)}
+        style={CUTE_FONT}
+        className={`${FIELD_BASE_CLASS} text-base text-left px-3 py-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-70 ${className}`}
+      >
+        📅 {formatDateLabel(value)}
+      </button>
+      <PixelModal open={open} onClose={() => setOpen(false)} title="날짜 선택" emoji="📅">
+        <MiniDatePicker
+          value={parseISO(value || toDateKey(new Date()))}
+          onSelect={(d) => {
+            const key = toDateKey(d);
+            if (min && key < min) return;
+            onSelect(key);
+            setOpen(false);
+          }}
+        />
+      </PixelModal>
+    </>
+  );
+}
+
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+const MINUTES = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"];
+
+interface TimeSelectProps {
+  value: string; // "HH:MM" 또는 빈 문자열(미지정)
+  onChange: (value: string) => void;
+  allowEmpty?: boolean;
+  className?: string;
+}
+
+// 브라우저 기본 <input type="time"> 대신, 시/분 드롭다운 두 개로 앱 톤에 맞춰 표시
+function TimeSelect({ value, onChange, allowEmpty = false, className = "" }: TimeSelectProps) {
+  const [rawHour, rawMinute] = value ? value.split(":") : ["", ""];
+  const hour = rawHour || (allowEmpty ? "" : "09");
+  const minute = MINUTES.includes(rawMinute) ? rawMinute : "00";
+
+  return (
+    <div className={`flex items-center gap-1 ${className}`}>
+      <select
+        style={CUTE_FONT}
+        className={`${FIELD_BASE_CLASS} text-base px-2 py-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60`}
+        value={hour}
+        onChange={(e) => onChange(e.target.value ? `${e.target.value}:${minute}` : "")}
+      >
+        {allowEmpty && <option value="">미지정</option>}
+        {HOURS.map((h) => (
+          <option key={h} value={h}>
+            {h}시
+          </option>
+        ))}
+      </select>
+      <select
+        style={CUTE_FONT}
+        className={`${FIELD_BASE_CLASS} text-base px-2 py-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60`}
+        value={minute}
+        disabled={!hour}
+        onChange={(e) => onChange(`${hour}:${e.target.value}`)}
+      >
+        {MINUTES.map((m) => (
+          <option key={m} value={m}>
+            {m}분
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
 
 interface EventFormProps {
   userId: string;
@@ -100,50 +201,35 @@ export function EventForm({ userId, onSaved, onCancel, dateKey, visibility, init
       )}
 
       <div className="flex items-center gap-2">
-        <PixelInput
-          type="date"
+        <DateField
           value={eventDate}
           disabled={!isEdit}
-          onChange={(e) => setEventDate(e.target.value)}
+          onSelect={setEventDate}
           className={`flex-1 ${isEdit ? "" : "opacity-70"}`}
-          style={CUTE_FONT}
         />
         {isRange && (
           <>
             <span className="font-cute">~</span>
-            <PixelInput
-              type="date"
-              value={endDate}
-              min={eventDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="flex-1"
-              style={CUTE_FONT}
-            />
+            <DateField value={endDate} min={eventDate} onSelect={setEndDate} className="flex-1" />
           </>
         )}
       </div>
 
-      <PixelCheckbox checked={hasTime} onChange={setHasTime}>
+      <PixelCheckbox
+        checked={hasTime}
+        onChange={(checked) => {
+          setHasTime(checked);
+          if (checked && !time) setTime("09:00");
+        }}
+      >
         시간을 지정할게요
       </PixelCheckbox>
 
       {hasTime && (
-        <div className="flex items-center gap-2">
-          <PixelInput
-            type="time"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            className="flex-1"
-            style={CUTE_FONT}
-          />
+        <div className="flex items-center gap-2 flex-wrap">
+          <TimeSelect value={time} onChange={setTime} />
           <span className="font-cute">~</span>
-          <PixelInput
-            type="time"
-            value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
-            className="flex-1"
-            style={CUTE_FONT}
-          />
+          <TimeSelect value={endTime} onChange={setEndTime} allowEmpty />
         </div>
       )}
       {hasTime && !endTime && (
