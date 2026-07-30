@@ -7,6 +7,43 @@ _Last updated: 2026-07-30_
 
 ## Tried
 
+- **Ported 2 specific visual details from a user-supplied AI design mockup** (a zipped static HTML/CSS/JS
+  handoff, not a real design tool file — `planner.css`/`planner-pages.css` were read directly for exact
+  values), explicitly *not* the whole mockup — user asked to keep the current structure/composition and
+  only borrow these two treatments, and explicitly said no to porting the mockup's bottom "완료한 할 일 /
+  이번 달 일정 / 쓴 일기" stat-strip under the monthly calendar:
+  - **Monthly calendar's today cell got a "TODAY" corner-tag badge** (`MonthCalendar.tsx`) — a small
+    rotated coral pill (`bg-pixel-red`, white text, `rounded-full`) absolutely positioned at
+    `-top-1.5 -right-1` so it visually hangs off/overlaps the cell's top-right corner (the "접힌" folded-tag
+    look the user pointed at in the mockup screenshot). Had to drop `overflow-hidden` from the today cell
+    specifically (kept on all other cells) so the badge isn't clipped. The mockup's own CSS (`.cal-badge`)
+    turned out to define exactly this coral/white/pill styling but was actually unused/dead in its demo JS
+    (which only ever renders a decorative `♡`, not text) — went with what the *screenshot* showed since
+    that's literally what the user referenced, not what the mockup's live demo currently does.
+  - **Sidebar's active nav pill got a diagonal 2-stop gradient** (`Sidebar.tsx`) instead of the previous
+    single-color-ish vertical fill, plus the icon chip gets a small drop-shadow when active — same idea as
+    the mockup's `.nav-item.active` (`linear-gradient(135deg, lav-100, peach-100)`), adapted to this app's
+    purple/pink family instead of lav/peach. Also added a dashed border + tiny `✿`/`♡` corner accents to the
+    sidebar's bottom mascot/greeting/logout card, matching the mockup's `.side-mascot` treatment.
+  - **Both of those are new dark-mode-aware CSS var pairs** (`--today-cell-from/to`,
+    `--sidebar-active-from/to` in `globals.css`) rather than the fixed-regardless-of-theme pattern used for
+    small chips/category dots — these are large fill areas, so (like `--contrib-0..4`) they need a genuinely
+    different, muted value in `:root.dark` or a bright pastel gradient would look wrong sitting on a dark
+    panel (confirmed by checking the mockup's own `daily-dark`/`monthly-dark` screenshots, which do show a
+    toned-down dark-plum/maroon version, not the bright light-mode pastel). Correspondingly, the text sitting
+    on top of these two elements was switched from the fixed `--pixel-chip-ink` to the theme-reactive
+    `--pixel-ink` (chip-ink is for text on backgrounds that *don't* change with theme; these two now do).
+  - **Sidebar tab order changed** per explicit request: 월간 캘린더 → 주간 캘린더 → 일일 플래너 → 하루
+    루틴 → 분기·연도 목표 → 단어 카드 퀴즈 → 채팅창 → 내 계정 (`TABS` array in `src/lib/tabs.ts` — chat
+    moved from 2nd to right above account; monthly/weekly/daily reordered; the rest kept their relative
+    order). This only reorders the sidebar buttons — `Dashboard.tsx`'s tab-content rendering order (and the
+    always-mounted-chat trick) didn't need touching since both just key off `activeTab`, not array order.
+  - Daily planner was deliberately left untouched (`"일일 플래너는 지금이 괜찮아서"` — explicitly out of
+    scope this round).
+  - `npm run build`/`npm run lint` both pass clean. Not manually browser-tested (badge overlap not clipped
+    by the surrounding `PixelCard`'s own `overflow-hidden` when today falls in the calendar's first visible
+    row, the two gradients' light/dark swap, and the reordered sidebar) — only build/lint-checked.
+
 - **GitHub 잔디 card rebuilt as a self-rendered, theme-aware, rounded-corner grid** — the previous
   `https://ghchart.rshah.org/{username}` `<img>` couldn't be restyled at all (it's a flat external image),
   so it always looked the same in dark mode and its cells were hard squares; the user asked for rounded
@@ -454,6 +491,10 @@ _Last updated: 2026-07-30_
 
 ## Next steps (priority order)
 
+-4. Not manually browser-tested: the new "TODAY" corner badge on the monthly calendar (especially when
+   today falls in the calendar's very first visible row — make sure it's not clipped by the card's own
+   rounded-corner `overflow-hidden`), the sidebar's new diagonal active-tab gradient and dashed mascot-card
+   border in both light and dark mode, and the reordered sidebar tabs.
 -3. Not manually browser-tested: the rebuilt GitHub 잔디 grid — rounded cell corners actually render, month
    labels line up above the right week column, the legend/tooltip look right, and toggling the sidebar's
    light/dark switch actually recolors the grid (the `--contrib-*` CSS vars) without a page reload. The API

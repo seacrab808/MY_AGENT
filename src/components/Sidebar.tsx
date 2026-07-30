@@ -40,15 +40,17 @@ export function Sidebar({ active, onChange, displayName, greeting }: SidebarProp
               <button
                 key={tab.key}
                 onClick={() => onChange(tab.key)}
-                className={`flex items-center gap-2.5 font-cute text-lg pl-2 pr-3 py-2 border-2 border-pixel-border rounded-[14px] whitespace-nowrap shrink-0 cursor-pointer transition-all ${
+                className={`flex items-center gap-2.5 font-cute text-lg pl-2 pr-3 py-2 border-2 rounded-[14px] whitespace-nowrap shrink-0 cursor-pointer transition-all ${
                   isActive
-                    ? "bg-gradient-to-b from-[#f6dcee] to-pixel-pink shadow-[var(--pixel-bevel-active)] text-pixel-chip-ink"
-                    : "bg-pixel-panel shadow-[var(--pixel-shadow-sm)] hover:-translate-y-0.5"
+                    ? "border-pixel-purple bg-gradient-to-br from-[var(--sidebar-active-from)] to-[var(--sidebar-active-to)] shadow-[var(--pixel-bevel-active)] text-pixel-ink font-bold"
+                    : "border-pixel-border bg-pixel-panel shadow-[var(--pixel-shadow-sm)] hover:-translate-y-0.5"
                 }`}
               >
                 <span
-                  className={`flex items-center justify-center w-7 h-7 rounded-[10px] border-2 border-pixel-border text-base ${
-                    isActive ? "bg-pixel-panel" : "bg-pixel-bg"
+                  className={`flex items-center justify-center w-7 h-7 rounded-[10px] border-2 text-base ${
+                    isActive
+                      ? "bg-pixel-panel border-pixel-purple shadow-[0_2px_4px_rgba(120,90,150,0.2)]"
+                      : "bg-pixel-bg border-pixel-border"
                   }`}
                 >
                   {tab.emoji}
@@ -63,7 +65,13 @@ export function Sidebar({ active, onChange, displayName, greeting }: SidebarProp
       </div>
 
       {/* 마스코트 카드 — 응원 문구 + 로그아웃 (예전엔 상단 배너에 있던 로그아웃을 여기로 옮김) */}
-      <div className="flex flex-col items-center gap-2 bg-pixel-panel border-2 border-pixel-border rounded-[18px] shadow-[var(--pixel-shadow)] p-3">
+      <div className="relative flex flex-col items-center gap-2 bg-pixel-panel border-2 border-dashed border-pixel-purple/40 rounded-[18px] shadow-[var(--pixel-shadow)] p-3 overflow-hidden">
+        <span className="absolute top-1.5 left-2.5 text-pixel-red/50 text-sm" aria-hidden>
+          ✿
+        </span>
+        <span className="absolute bottom-1.5 right-2.5 text-pixel-purple/50 text-sm" aria-hidden>
+          ♡
+        </span>
         <span className="text-2xl" aria-hidden>
           🐰 🐻
         </span>

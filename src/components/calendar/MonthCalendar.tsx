@@ -177,13 +177,19 @@ export function MonthCalendar({ monthDate, onMonthChange, events, onSelectDate }
                     <button
                       key={dateKey}
                       onClick={() => onSelectDate(dateKey)}
-                      className={`min-h-[76px] sm:min-h-[92px] flex flex-col items-center justify-start p-1 rounded-[10px] border-2 cursor-pointer transition-transform overflow-hidden ${
+                      className={`relative min-h-[76px] sm:min-h-[92px] flex flex-col items-center justify-start p-1 rounded-[10px] border-2 cursor-pointer transition-transform ${
                         todayFlag
-                          ? "border-pixel-purple bg-gradient-to-b from-[#f6dcee] to-pixel-pink shadow-[var(--pixel-shadow-sm)] text-pixel-chip-ink"
-                          : "border-transparent hover:border-pixel-border hover:-translate-y-0.5"
+                          ? "border-pixel-purple bg-gradient-to-br from-[var(--today-cell-from)] to-[var(--today-cell-to)] shadow-[var(--pixel-shadow-sm)] text-pixel-ink"
+                          : "border-transparent hover:border-pixel-border hover:-translate-y-0.5 overflow-hidden"
                       } ${!inMonth ? "opacity-35" : ""}`}
                       style={{ paddingBottom: laneCount * (BAR_ROW_HEIGHT + BAR_ROW_GAP) + 4 }}
                     >
+                      {/* 오늘 칸 모서리에 살짝 걸쳐 놓은 "접힌 태그"처럼 보이는 TODAY 배지 */}
+                      {todayFlag && (
+                        <span className="absolute -top-1.5 -right-1 rotate-[10deg] font-cute text-[9px] font-bold leading-none text-white bg-pixel-red px-1.5 py-0.5 rounded-full shadow-[0_2px_4px_rgba(150,60,80,0.35)] z-10">
+                          TODAY
+                        </span>
+                      )}
                       <span className="font-cute text-base leading-none mt-1">{format(day, "d")}</span>
                       <div
                         className="flex items-center gap-0.5 flex-nowrap justify-center"

@@ -29,6 +29,13 @@
   --contrib-3: #a15be0;
   --contrib-4: #7c2fd1;
 
+  /* 월간 캘린더 오늘 칸, 사이드바 active 탭의 대각선 그라데이션. 넓은 면적을 채우는 배경이라
+     (칩/점처럼 작은 포인트 색과 달리) 다크 모드에서는 톤을 확 낮춰야 해서 별도 변수로 뺌 */
+  --today-cell-from: #ecdcff;
+  --today-cell-to: #ffb3d1;
+  --sidebar-active-from: #e9dcff;
+  --sidebar-active-to: #ffd9ea;
+
   /* 부드러운 종이 질감 느낌의 그림자 (기존의 딱딱한 flat pixel shadow를 대체) */
   --pixel-shadow: 0 6px 16px rgba(120, 90, 70, 0.14);
   --pixel-shadow-sm: 0 3px 8px rgba(120, 90, 70, 0.12);
@@ -78,6 +85,11 @@
   --contrib-2: #7952a8;
   --contrib-3: #a066d6;
   --contrib-4: #dd93f5;
+
+  --today-cell-from: #3d2f52;
+  --today-cell-to: #4a2438;
+  --sidebar-active-from: #3a2d6a;
+  --sidebar-active-to: #4a2438;
 }
 
 html {
