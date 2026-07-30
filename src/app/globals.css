@@ -6,6 +6,8 @@
   --pixel-ink: #2b2f5e;
   --pixel-ink-soft: #6b6f9a;
   --pixel-border: #2b2f5e;
+  /* 파스텔 배경칩(연속 일정 막대/뱃지) 전용 글자색. 다크모드에서도 밝아지지 않게 고정 */
+  --pixel-chip-ink: #33344a;
 
   --pixel-blue: #8fb4ff;
   --pixel-pink: #ffb8d1;
@@ -34,6 +36,7 @@
   --color-pixel-panel: var(--pixel-panel);
   --color-pixel-ink: var(--pixel-ink);
   --color-pixel-ink-soft: var(--pixel-ink-soft);
+  --color-pixel-chip-ink: var(--pixel-chip-ink);
   --color-pixel-border: var(--pixel-border);
   --color-pixel-blue: var(--pixel-blue);
   --color-pixel-pink: var(--pixel-pink);

@@ -71,8 +71,8 @@ export function WeeklyTab({ userId }: WeeklyTabProps) {
                   {dayEvents.map((event) => (
                     <span
                       key={event.id}
-                      className="inline-block font-pixel text-[10px] leading-none px-2 py-1.5 border-2 border-pixel-border rounded-[6px] text-pixel-ink w-fit"
-                      style={{ backgroundColor: eventColor(event) }}
+                      className="inline-block font-pixel text-[10px] leading-none px-2 py-1.5 border-2 border-pixel-border rounded-[6px] w-fit"
+                      style={{ backgroundColor: eventColor(event), color: "var(--pixel-chip-ink)" }}
                     >
                       {event.event_time ? `${event.event_time.slice(0, 5)} ` : ""}
                       {event.title}

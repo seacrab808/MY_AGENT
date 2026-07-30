@@ -185,7 +185,7 @@ export function MonthCalendar({ monthDate, onMonthChange, events, onSelectDate }
                         gridColumn: `${seg.startCol} / ${seg.startCol + seg.span}`,
                         gridRow: seg.lane + 1,
                         backgroundColor: eventColor(seg.event),
-                        color: "var(--pixel-ink)",
+                        color: "var(--pixel-chip-ink)",
                       }}
                     >
                       {seg.roundedLeft ? seg.event.title : ""}

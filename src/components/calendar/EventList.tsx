@@ -21,8 +21,8 @@ export function EventList({ events }: { events: PlannerEvent[] }) {
             className="flex items-start gap-2 border-2 border-pixel-border rounded-[10px] p-2.5 bg-pixel-bg"
           >
             <span
-              className="inline-block font-pixel text-[10px] leading-none px-2 py-1.5 border-2 border-pixel-border rounded-[6px] text-pixel-ink shrink-0"
-              style={{ backgroundColor: eventColor(event) }}
+              className="inline-block font-pixel text-[10px] leading-none px-2 py-1.5 border-2 border-pixel-border rounded-[6px] shrink-0"
+              style={{ backgroundColor: eventColor(event), color: "var(--pixel-chip-ink)" }}
             >
               {categoryLabel(event.category)}
             </span>
