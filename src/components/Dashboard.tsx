@@ -5,7 +5,6 @@ import { endOfMonth, endOfWeek, format, startOfMonth, startOfWeek } from "date-f
 import { createClient } from "@/lib/supabase/client";
 import { eventDateKeys, fetchEventsForRange, filterEventsForTab, groupEventsByDate } from "@/lib/events";
 import { toDateKey, todayIsMonday, currentWeekRange, KOREAN_WEEKDAY } from "@/lib/date";
-import { fillCheerTemplate, pickRandomCheerTemplate } from "@/lib/greetings";
 import type { PlannerEvent } from "@/types/event";
 import type { TabKey } from "@/lib/tabs";
 import { Sidebar } from "@/components/Sidebar";
@@ -40,11 +39,6 @@ export function Dashboard({
   const [events, setEvents] = useState<PlannerEvent[]>(initialEvents);
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(initialDisplayName);
-
-  // 켤 때마다(마운트마다) 응원 문구를 하나 랜덤으로 뽑음. 계정 탭에서 이름을 바꿔도 문구 자체는
-  // 다시 뽑지 않고(같은 세션 안에서 바뀌면 어색하니) 이름만 새로 끼워 넣음.
-  const [cheerTemplate] = useState(() => pickRandomCheerTemplate());
-  const greeting = fillCheerTemplate(cheerTemplate, displayName?.trim() || "사용자님");
 
   const [weekEvents, setWeekEvents] = useState<PlannerEvent[]>([]);
   const today = useMemo(() => new Date(), []);
@@ -96,12 +90,7 @@ export function Dashboard({
   return (
     <div className="flex flex-col flex-1 max-w-7xl w-full mx-auto p-4 gap-4">
       <div className="flex flex-col md:flex-row gap-4 items-start flex-1 min-w-0">
-        <Sidebar
-          active={activeTab}
-          onChange={setActiveTab}
-          displayName={displayName}
-          greeting={greeting}
-        />
+        <Sidebar active={activeTab} onChange={setActiveTab} displayName={displayName} />
 
         {/* md 이상에서는 Sidebar가 position:fixed라 flex 흐름에서 빠지므로, gap-4가 만들어주던
             자리를 md:pl-[16rem](사이드바 폭 15rem + gap 1rem)로 직접 비워줌 */}

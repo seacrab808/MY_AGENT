@@ -9,11 +9,32 @@ interface SidebarProps {
   active: TabKey;
   onChange: (tab: TabKey) => void;
   displayName: string | null;
-  greeting: string;
 }
 
-export function Sidebar({ active, onChange, displayName, greeting }: SidebarProps) {
+// "내 계정"은 일반 nav 목록이 아니라 맨 아래 로그아웃 옆에 따로 둠 — TABS 배열 자체는 그대로 두고
+// (다른 곳에서 참조할 수도 있으니) 여기서만 걸러냄.
+const ACCOUNT_TAB = TABS.find((tab) => tab.key === "account")!;
+const NAV_TABS = TABS.filter((tab) => tab.key !== "account");
+
+function navButtonClass(isActive: boolean) {
+  return `flex items-center gap-2.5 font-cute text-lg pl-2 pr-3 py-2 border-2 rounded-[14px] whitespace-nowrap shrink-0 cursor-pointer transition-all ${
+    isActive
+      ? "border-pixel-purple bg-gradient-to-br from-[var(--sidebar-active-from)] to-[var(--sidebar-active-to)] shadow-[var(--pixel-bevel-active)] text-pixel-ink font-bold"
+      : "border-transparent hover:bg-pixel-bg"
+  }`;
+}
+
+function navIconClass(isActive: boolean) {
+  return `flex items-center justify-center w-7 h-7 rounded-[10px] border-2 text-base ${
+    isActive
+      ? "bg-pixel-panel border-pixel-purple shadow-[0_2px_4px_rgba(120,90,150,0.2)]"
+      : "bg-pixel-bg border-pixel-border"
+  }`;
+}
+
+export function Sidebar({ active, onChange, displayName }: SidebarProps) {
   const nameLabel = displayName?.trim() || "사용자";
+  const isAccountActive = active === "account";
 
   return (
     // 디자인 목업의 .sidebar처럼 프로필/nav/마스코트를 각각 따로 뜬 카드로 두지 않고,
@@ -44,27 +65,15 @@ export function Sidebar({ active, onChange, displayName, greeting }: SidebarProp
 
       <div className="relative">
         <nav className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-0">
-          {TABS.map((tab) => {
+          {NAV_TABS.map((tab) => {
             const isActive = active === tab.key;
             return (
               <button
                 key={tab.key}
                 onClick={() => onChange(tab.key)}
-                className={`flex items-center gap-2.5 font-cute text-lg pl-2 pr-3 py-2 border-2 rounded-[14px] whitespace-nowrap shrink-0 cursor-pointer transition-all ${
-                  isActive
-                    ? "border-pixel-purple bg-gradient-to-br from-[var(--sidebar-active-from)] to-[var(--sidebar-active-to)] shadow-[var(--pixel-bevel-active)] text-pixel-ink font-bold"
-                    : "border-transparent hover:bg-pixel-bg"
-                }`}
+                className={navButtonClass(isActive)}
               >
-                <span
-                  className={`flex items-center justify-center w-7 h-7 rounded-[10px] border-2 text-base ${
-                    isActive
-                      ? "bg-pixel-panel border-pixel-purple shadow-[0_2px_4px_rgba(120,90,150,0.2)]"
-                      : "bg-pixel-bg border-pixel-border"
-                  }`}
-                >
-                  {tab.emoji}
-                </span>
+                <span className={navIconClass(isActive)}>{tab.emoji}</span>
                 {tab.label}
               </button>
             );
@@ -74,18 +83,13 @@ export function Sidebar({ active, onChange, displayName, greeting }: SidebarProp
         <div className="pointer-events-none absolute top-0 right-0 bottom-2 w-8 bg-gradient-to-l from-pixel-panel to-transparent md:hidden" />
       </div>
 
-      {/* 마스코트: 응원 문구 + 로그아웃 (예전엔 상단 배너에 있던 로그아웃을 여기로 옮김) */}
-      <div className="relative flex flex-col items-center gap-2 bg-gradient-to-br from-pixel-purple/10 to-pixel-pink/10 border-2 border-dashed border-pixel-purple/40 rounded-[18px] p-3 overflow-hidden">
-        <span className="absolute top-1.5 left-2.5 text-pixel-red/50 text-sm" aria-hidden>
-          ✿
-        </span>
-        <span className="absolute bottom-1.5 right-2.5 text-pixel-purple/50 text-sm" aria-hidden>
-          ♡
-        </span>
-        <span className="text-2xl" aria-hidden>
-          🐰 🐻
-        </span>
-        <p className="font-cute text-xs text-center text-pixel-ink-soft leading-snug">{greeting}</p>
+      {/* 내 계정 + 로그아웃: 응원 문구/마스코트 장식은 빼고 계정 관련 동작만 모아서 사이드바
+          맨 아래에 고정 (mt-auto로 데스크톱의 고정 높이 안에서 항상 하단에 붙음) */}
+      <div className="mt-auto flex flex-col gap-2 pt-3 border-t-2 border-dashed border-pixel-border">
+        <button onClick={() => onChange("account")} className={navButtonClass(isAccountActive)}>
+          <span className={navIconClass(isAccountActive)}>{ACCOUNT_TAB.emoji}</span>
+          {ACCOUNT_TAB.label}
+        </button>
         <form action={logout} className="w-full">
           <PixelButton type="submit" tone="ink" className="w-full text-sm px-3 py-1.5">
             로그아웃

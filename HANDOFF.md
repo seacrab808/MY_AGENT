@@ -7,6 +7,30 @@ _Last updated: 2026-07-30_
 
 ## Tried
 
+- **Moved "내 계정" out of the regular sidebar nav list into a new bottom section next to 로그아웃, and
+  removed the mascot/greeting decoration** (`Sidebar.tsx`, `Dashboard.tsx`) — user explicitly walked back an
+  initial "move Chat too" ask mid-message to "Chat can stay put, only Account should move," so `채팅창`'s nav
+  position is untouched:
+  - `Sidebar.tsx`: `TABS` (from `lib/tabs.ts`, left unchanged so anything else referencing the full list still
+    can) is now split into `NAV_TABS` (everything except `account`, rendered in the normal `<nav>` list same
+    as before) and a standalone `ACCOUNT_TAB` lookup. The old dashed-border "마스코트" box (🐰🐻 emoji + random
+    cheer-greeting text + 로그아웃 button) was replaced with a new bottom block —
+    `border-t-2 border-dashed border-pixel-border` separator + a 내 계정 nav-style button (reusing the exact
+    same active/inactive pill styling as the regular nav items, via extracted `navButtonClass()`/
+    `navIconClass()` helpers, so it still visually reads as a nav item despite living in a different spot) +
+    the unchanged 로그아웃 `PixelButton`. Added `mt-auto` to this block so on desktop (where the sidebar panel
+    has a fixed `md:h-[calc(100vh-2rem)]`) it's pinned to the literal bottom edge of the panel, not just
+    sitting immediately after the nav with blank space trailing below it as before.
+  - **Random cheer-greeting text removed entirely, not just hidden** — since it had no purpose left once the
+    mascot box became a plain account/logout control cluster. Removed the `greeting` prop from `Sidebar`'s
+    props entirely, and deleted the `cheerTemplate`/`greeting` `useState`/computation and
+    `fillCheerTemplate`/`pickRandomCheerTemplate` import from `Dashboard.tsx` (dead code otherwise, since
+    nothing else consumed it). Deliberately did **not** delete `src/lib/greetings.ts` itself (the util
+    functions) in case this gets reused somewhere else later — just stopped wiring it into the sidebar.
+  - `npx tsc --noEmit`, `npm run lint`, `npm run build` all pass clean. Not manually browser-tested (the new
+    bottom block actually pinning to the sidebar's bottom edge on desktop vs. sitting inline on mobile, and
+    that 내 계정's active-state highlight still renders correctly when that tab is open) — build/lint only.
+
 - **Fixed the daily-planner drag-to-reorder actually doing nothing, matched the monthly TODO/회고 card
   heights, and swapped the sidebar from `position: sticky` to a real `position: fixed`**:
   - **Root cause of "drag-to-reorder doesn't work" (a real logic bug, not a missing-migration issue)**:
