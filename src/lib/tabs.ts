@@ -1,4 +1,12 @@
-export type TabKey = "monthly" | "chat" | "weekly" | "daily" | "routine_preset" | "goals" | "vocab";
+export type TabKey =
+  | "monthly"
+  | "chat"
+  | "weekly"
+  | "daily"
+  | "routine_preset"
+  | "goals"
+  | "vocab"
+  | "account";
 
 export interface TabDef {
   key: TabKey;
@@ -14,4 +22,5 @@ export const TABS: TabDef[] = [
   { key: "routine_preset", label: "하루 루틴", emoji: "🔄" },
   { key: "goals", label: "분기 · 연도 목표", emoji: "🎯" },
   { key: "vocab", label: "단어 카드 퀴즈", emoji: "🃏" },
+  { key: "account", label: "내 계정", emoji: "👤" },
 ];

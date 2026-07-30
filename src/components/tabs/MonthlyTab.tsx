@@ -20,6 +20,7 @@ interface MonthlyTabProps {
   onEventUpdated: (event: PlannerEvent) => void;
   onEventDeleted: (eventId: string) => void;
   onEventDuplicated: (event: PlannerEvent) => void;
+  onGoToAccount: () => void;
 }
 
 export function MonthlyTab({
@@ -34,6 +35,7 @@ export function MonthlyTab({
   onEventUpdated,
   onEventDeleted,
   onEventDuplicated,
+  onGoToAccount,
 }: MonthlyTabProps) {
   return (
     <div className="grid lg:grid-cols-[1.4fr_1fr] gap-4 items-start">
@@ -51,7 +53,7 @@ export function MonthlyTab({
 
       {/* 캘린더+TODO 전체 너비만큼 꽉 채워서 아래에 배치 */}
       <div className="lg:col-span-2 min-w-0">
-        <GithubContributionsCard />
+        <GithubContributionsCard userId={userId} onConnectClick={onGoToAccount} />
       </div>
 
       <DayPopup

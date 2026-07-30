@@ -7,6 +7,69 @@ _Last updated: 2026-07-30_
 
 ## Tried
 
+- Chat persistence + UX, month-calendar dot/bar overlap fix, global button/font tweaks, a real GitHub
+  contributions widget, a routine-preset sync bug fix, and a themed date/time picker in `EventForm` — all in
+  one session, in request order:
+  - **Chat history survives tab switches and reloads.** `ChatPanel.tsx` now persists `messages` to
+    `localStorage` (key `planner_chat_history_v1`) with a 24h TTL (`savedAt` timestamp checked on load; stale
+    entries are dropped back to the welcome message). Separately, `Dashboard.tsx` now keeps `ChatTab` always
+    mounted (hidden via a `hidden` class toggle) instead of conditionally rendering it like every other
+    tab — this was the actual fix for "in-flight reply disappears if I switch tabs while it's thinking",
+    since the old conditional-render pattern unmounted (and destroyed) the whole component + its pending
+    fetch. Other tabs deliberately still unmount on switch (unchanged, matches the existing documented
+    per-tab-independent-state behavior).
+  - **Month calendar dots no longer overlap multi-day bars.** `MonthCalendar.tsx` previously gave every dot
+    row the same fixed `mt-1`, while bars were absolutely positioned starting right below the date number —
+    on a day with 1+ bar lanes, the dot row visually collided with the bar(s) on top of it. Now each day
+    computes its own overlapping-bar lane count (`bars.filter` on that day's column range) and sets the dot
+    row's `marginTop` to clear exactly that many lanes; days with no bar covering them keep the old small
+    margin. Also capped visible dots to 3 with a non-wrapping `…` overflow indicator (`flex-nowrap` +
+    `overflow-hidden` on the day button) instead of letting extra dots wrap to a second line inside the cell.
+  - **`PixelButton` border thinned, text no longer wraps.** `border-[3px]` → `border-2`, added
+    `whitespace-nowrap` — fixes 2-character labels like "추가" rendering as two stacked lines when the
+    button was narrow.
+  - **All body text now uses the cute font.** `globals.css`'s `--font-body` theme var was repointed from
+    Noto Sans KR to the same Gaegu font as `--font-cute` — every existing `font-body` usage (descriptions,
+    chat bubbles, form helper text) picks this up automatically with no per-component edits. Dropped the
+    now-unused `Noto_Sans_KR` font load from `layout.tsx`. Deliberately left `font-pixel` (Press Start 2P)
+    alone — still used for small retro badges/X-delete buttons, not "body text".
+  - **GitHub contribution graph ("잔디"), now user-connectable, not hardcoded.** First pass hardcoded a
+    single username via `NEXT_PUBLIC_GITHUB_USERNAME`/`seacrab808` default; user asked whether it could be
+    per-account instead, so it was reworked into a real per-user setting:
+    - New `supabase/migrations/0008_user_settings.sql` — `public.user_settings` table
+      (`user_id` PK/FK, `github_username`, `updated_at`), owner-only RLS.
+    - New `src/types/settings.ts` + `src/lib/settings.ts` (`fetchUserSettings`/`saveGithubUsername`, upsert).
+    - New **"내 계정" sidebar tab** (`account` added to `TabKey`/`TABS` in `src/lib/tabs.ts`,
+      `src/components/tabs/AccountTab.tsx`) with a form to type/change the GitHub username (accepts a bare
+      username, `@username`, or a pasted `github.com/username` URL — normalized before saving; empty +
+      save clears it).
+    - `src/components/github/GithubContributionsCard.tsx` is now a client component that loads the current
+      user's `user_settings.github_username`. If unset, shows a themed "GitHub 연동하기" prompt/button
+      (`onConnectClick` prop, wired from `Dashboard` → `MonthlyTab` as `() => setActiveTab("account")`)
+      instead of the image. If set, renders `https://ghchart.rshah.org/{username}` — this is a public,
+      no-auth SVG image service that mirrors GitHub's own public `/users/{username}/contributions` data
+      (verified the actual pixel colors/counts match GitHub's real page for `seacrab808` before wiring it
+      up); not a real GitHub OAuth connection, just a per-user stored username. Widened the card from the
+      calendar's column to `lg:col-span-2` (full calendar+TODO width) per follow-up request.
+  - **Fixed a routine-preset sync bug**: adding a new day-of-week preset (e.g. via chat) only ever showed up
+    on daily-planner dates that hadn't been opened yet. `RoutineChecklist.tsx`'s effect used to copy
+    `routine_presets` → `routines` rows *only* the first time a date+period had zero rows, so a date already
+    materialized before the preset was added never got the new item. Now every load diffs existing routine
+    labels against the current day-of-week presets and backfills whatever's missing, on every visit — not
+    just the first one. Trade-off (documented in a code comment and to the user): if someone deletes a
+    preset-derived item on one specific day only, it can reappear next visit if that preset still exists
+    elsewhere (no per-day "skip this one" flag exists).
+  - **`EventForm.tsx` date/time fields restyled to match the app** instead of native
+    `<input type="date">`/`<input type="time">` (which render as unstyled OS widgets, clashing with the
+    pixel/cute theme). New local `DateField` (button + `PixelModal` wrapping the existing `MiniDatePicker`,
+    same combo already used by the daily planner's date picker) and `TimeSelect` (hour/minute `<select>`
+    pair styled like the other pixel form fields, with an optional "미지정" option so the end-time can still
+    be left blank to trigger the existing auto-duration fallback). Explicitly scoped to look close to the
+    *current* style per the user's own framing ("나중에 디자인 싹 바꿀 거니까 지금이랑 비슷하게") — not a
+    redesign, just swapping the native widgets for themed equivalents.
+
+## Tried (previous sessions, kept for context)
+
 - Reworked event categories/colors, form styling, and calendar bar appearance per explicit request:
   - **Category set changed and colors are now fixed per category, not user-picked.** `EventCategory` is now
     `general | travel | important | meeting | conference` (was `general | dday | exam | meeting`).
@@ -185,12 +248,15 @@ _Last updated: 2026-07-30_
      `'triangle'` check_status — needed for the drag-to-reorder daily list)
   7. `supabase/migrations/0007_event_category_rename.sql` (renames existing `category` values to the new
      5-category set — needed so old events don't end up with a category no longer in `CATEGORY_COLOR_HEX`)
+  8. `supabase/migrations/0008_user_settings.sql` (new `user_settings` table — needed for the "내 계정" tab's
+     GitHub-username save/load and the GitHub contributions card on the monthly tab; without this, saving on
+     the account tab will fail and the contributions card will be stuck showing the "연동하기" prompt)
 
   Until the user runs all pending ones in order, those features will error at the DB layer (or, for #7
   specifically, old events just silently fall back to the `general` color via `eventColor()`'s `??` —
   not a hard error, but worth running anyway for correct colors). **Check this first** if attachments,
-  vocab groups, bar-style events, routine presets, category colors, or the O/X checks/reorder look broken
-  next session.
+  vocab groups, bar-style events, routine presets, category colors, the O/X checks/reorder, or the GitHub
+  account tab look broken next session.
 - Did **not** build a true WYSIWYG rich-text editor with images embedded at the cursor position inside
   free-flowing memo text. Deliberately scoped down to: a drop-zone over the memo area that uploads images
   as separate resizable cards displayed alongside the memo text (not interleaved within it). This satisfies
@@ -225,6 +291,14 @@ _Last updated: 2026-07-30_
 
 ## Next steps (priority order)
 
+0. **User needs to run `supabase/migrations/0008_user_settings.sql`** before the new "내 계정" tab's GitHub
+   username save, or the monthly tab's GitHub contributions card, will work end-to-end.
+0b. Not manually browser-tested: the account tab's save/load round-trip, the contributions card's
+   connected/not-connected states, the reworked `EventForm` date/time pickers (including the nested-modal
+   case where `EventForm` is already inside `AddEventModal`/`EventDetailModal`/`DayPopup` and `DateField`
+   opens a second `PixelModal` on top — should stack fine since both are simple `fixed inset-0` overlays,
+   but hasn't had human eyes on it), and the routine-preset backfill-on-every-visit fix (add a preset, revisit
+   an already-opened date, confirm the new item now appears without needing to re-click anything).
 1. **Ask the user to check Vercel Project Settings → Environment Variables** for `GEMINI_API_KEY`,
    `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (all three, and note `NEXT_PUBLIC_*` vars need
    a redeploy after being added/changed since they're baked in at build time). This is the leading theory for

@@ -15,6 +15,7 @@ import { DailyPlannerTab } from "@/components/tabs/DailyPlannerTab";
 import { RoutinePresetTab } from "@/components/tabs/RoutinePresetTab";
 import { GoalsTab } from "@/components/tabs/GoalsTab";
 import { VocabQuizTab } from "@/components/tabs/VocabQuizTab";
+import { AccountTab } from "@/components/tabs/AccountTab";
 import { TodayPopup } from "@/components/notifications/TodayPopup";
 import { WeeklyPopup } from "@/components/notifications/WeeklyPopup";
 import { PixelButton } from "@/components/ui/PixelButton";
@@ -117,6 +118,7 @@ export function Dashboard({ userId, userEmail, initialEvents, initialMonth }: Da
               onEventUpdated={handleEventUpdated}
               onEventDeleted={handleEventDeleted}
               onEventDuplicated={handleEventCreated}
+              onGoToAccount={() => setActiveTab("account")}
             />
           )}
           {/* Chat stays mounted across tab switches (unlike other tabs) so an
@@ -130,6 +132,7 @@ export function Dashboard({ userId, userEmail, initialEvents, initialMonth }: Da
           {activeTab === "routine_preset" && <RoutinePresetTab userId={userId} />}
           {activeTab === "goals" && <GoalsTab userId={userId} />}
           {activeTab === "vocab" && <VocabQuizTab userId={userId} />}
+          {activeTab === "account" && <AccountTab userId={userId} userEmail={userEmail} />}
         </div>
       </div>
 
