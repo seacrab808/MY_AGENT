@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { PixelCard } from "@/components/ui/PixelCard";
 import { PixelButton } from "@/components/ui/PixelButton";
 import { PixelInput } from "@/components/ui/PixelInput";
@@ -16,17 +16,51 @@ interface ChatPanelProps {
   onEventCreated: (event: PlannerEvent) => void;
 }
 
+const WELCOME_MESSAGE: ChatMessage = {
+  id: "welcome",
+  role: "assistant",
+  text: "안녕! 나는 너의 일정 비서야. \"8월 5일 15시에 논문 미팅\" 처럼 말해주면 캘린더에 등록해줄게 📌",
+};
+
+const CHAT_HISTORY_STORAGE_KEY = "planner_chat_history_v1";
+const CHAT_HISTORY_TTL_MS = 24 * 60 * 60 * 1000; // 하루 동안 대화 내용 보관
+
+function loadStoredMessages(): ChatMessage[] {
+  if (typeof window === "undefined") return [WELCOME_MESSAGE];
+  try {
+    const raw = window.localStorage.getItem(CHAT_HISTORY_STORAGE_KEY);
+    if (!raw) return [WELCOME_MESSAGE];
+    const parsed = JSON.parse(raw) as { messages: ChatMessage[]; savedAt: number };
+    if (
+      !parsed ||
+      !Array.isArray(parsed.messages) ||
+      Date.now() - parsed.savedAt > CHAT_HISTORY_TTL_MS
+    ) {
+      window.localStorage.removeItem(CHAT_HISTORY_STORAGE_KEY);
+      return [WELCOME_MESSAGE];
+    }
+    return parsed.messages.length > 0 ? parsed.messages : [WELCOME_MESSAGE];
+  } catch {
+    return [WELCOME_MESSAGE];
+  }
+}
+
 export function ChatPanel({ onEventCreated }: ChatPanelProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      text: "안녕! 나는 너의 일정 비서야. \"8월 5일 15시에 논문 미팅\" 처럼 말해주면 캘린더에 등록해줄게 📌",
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => loadStoredMessages());
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        CHAT_HISTORY_STORAGE_KEY,
+        JSON.stringify({ messages, savedAt: Date.now() })
+      );
+    } catch {
+      // localStorage 사용 불가(프라이버시 모드 등)한 경우 조용히 무시
+    }
+  }, [messages]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();

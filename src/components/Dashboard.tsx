@@ -119,7 +119,12 @@ export function Dashboard({ userId, userEmail, initialEvents, initialMonth }: Da
               onEventDuplicated={handleEventCreated}
             />
           )}
-          {activeTab === "chat" && <ChatTab onEventCreated={handleEventCreated} />}
+          {/* Chat stays mounted across tab switches (unlike other tabs) so an
+              in-flight reply and the conversation state survive navigating away
+              and back, instead of resetting when the tab unmounts. */}
+          <div className={activeTab === "chat" ? "" : "hidden"}>
+            <ChatTab onEventCreated={handleEventCreated} />
+          </div>
           {activeTab === "weekly" && <WeeklyTab userId={userId} />}
           {activeTab === "daily" && <DailyPlannerTab userId={userId} />}
           {activeTab === "routine_preset" && <RoutinePresetTab userId={userId} />}
