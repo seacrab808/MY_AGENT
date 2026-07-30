@@ -59,7 +59,8 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col">
-        {children}
+        {/* relative + z-index: 다크 모드의 고정(fixed) 별빛 배경(body::after) 위로 실제 콘텐츠가 올라오게 함 */}
+        <div className="relative z-[1] flex flex-col flex-1 min-h-full">{children}</div>
         <ServiceWorkerRegister />
       </body>
     </html>

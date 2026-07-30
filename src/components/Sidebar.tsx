@@ -16,7 +16,7 @@ export function Sidebar({ active, onChange, displayName, greeting }: SidebarProp
   const nameLabel = displayName?.trim() || "사용자";
 
   return (
-    <div className="w-full md:w-60 shrink-0 flex flex-col gap-3">
+    <div className="w-full md:w-60 shrink-0 flex flex-col gap-3 md:sticky md:top-4 md:self-start md:max-h-[calc(100vh-2rem)] md:overflow-y-auto md:overflow-x-hidden">
       {/* 프로필 카드 — 예전엔 상단 배너에 있던 자리, 이제 사이드바 맨 위로 옮김 */}
       <div className="bg-pixel-panel border-2 border-pixel-border rounded-[18px] shadow-[var(--pixel-shadow)] p-3 flex items-center gap-2.5">
         <span

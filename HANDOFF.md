@@ -7,6 +7,50 @@ _Last updated: 2026-07-30_
 
 ## Tried
 
+- **4 smaller fixes/additions from the same design-mockup zip, in one batch**: starry dark-mode background,
+  a sticky sidebar, a year/month picker on the monthly calendar, and a vocab flip-card bug fix.
+  - **Dark-mode "starry night" background**, ported near-verbatim from the mockup's `planner.css`
+    (`[data-theme="dark"] body` + `body::after`): `globals.css`'s `:root.dark body` now sets a `background`
+    shorthand of 3 stacked navy/purple `radial-gradient`s over a dark base color (`#14113a`), replacing the
+    flat `--pixel-bg` solid fill in dark mode only (light mode `body` is untouched — still the plain solid
+    `--pixel-bg` color). A new `:root.dark body::after` (`position: fixed`, `z-index: 0`) layers ~11 small
+    white/semi-transparent `radial-gradient` dots at fixed % positions for stars, with a 4s `twinkle`
+    keyframe animation fading opacity 0.8↔0.4. Because a `position: fixed` pseudo-element painted after the
+    real DOM content would otherwise sit on top of it (fixed-positioned elements get their own stacking
+    context regardless of z-index value), `layout.tsx`'s `<body>` now wraps `{children}` in a
+    `relative z-[1]` div so the actual app content stacks above the star layer — same trick the mockup used
+    with its own `.app { position: relative; z-index: 1; }`. `body`'s `transition` changed from
+    `background-color` to `background` (shorthand) so the light↔dark toggle still fades instead of snapping,
+    at the cost of the gradient positions themselves not being animatable (only opacity/color components
+    transition smoothly — acceptable, matches how the mockup did it too, no transition on its own bg swap).
+  - **Sidebar now stays fixed in the viewport while the page scrolls** (`Sidebar.tsx`): added
+    `md:sticky md:top-4 md:self-start md:max-h-[calc(100vh-2rem)] md:overflow-y-auto` to the sidebar's
+    outer wrapper div. Relies on `Dashboard.tsx`'s existing `items-start` on the parent flex row (already
+    there, not changed) — `position: sticky` needs the sidebar to not be stretched to the row's full height
+    for the sticky offset to have room to move within. Mobile (`<md`, stacked single-column layout) is
+    untouched — no sticky behavior there, matches the mockup which only stickied the desktop 2-column grid.
+  - **Monthly calendar gained a year/month picker**, mirroring the existing daily-planner date-picker UX
+    (click the date title → `PixelModal` opens → pick → auto-closes): new
+    `src/components/calendar/MiniMonthYearPicker.tsx` (year row with `<`/`>` `PixelIconButton`s + a 4-column
+    grid of the 12 month names) plugged into `MonthCalendar.tsx` via a new `pickingMonth` state + the same
+    `PixelModal` component the daily planner already uses for `MiniDatePicker`. Per the explicit request
+    ("너무 먼 미래는 말고... 2-3년 뒤까지만"), the year `>` button disables past `currentYear + 3` — the `<`
+    (past) direction is deliberately left unbounded since the user only asked to cap the *future*, not the
+    past, and historical months should stay reachable.
+  - **Fixed vocab quiz `FlipCard.tsx`: the ★/▲ mark buttons now flip with the card.** Root cause: the two
+    buttons were siblings *outside* the `[transform-style:preserve-3d]` rotating div, so they were flat
+    absolutely-positioned overlays that never actually rotated — they just sat static on top throughout the
+    whole flip animation (looked visually detached from the card's 3D motion, not "following" it). Fix:
+    duplicated each button (still `stopPropagation`-guarded so clicking a mark doesn't also flip the card)
+    into *both* face `div`s (front + back), each inheriting that face's own `[backface-visibility:hidden]`
+    and rotation — same trick the back face's meaning-text already relied on (pre-rotated 180deg so its net
+    rotation lands back at 0/360deg and reads right-side-up, not mirrored, when flipped). No visual/position
+    change when the card is static; the difference only shows during/after the flip.
+  - `npx tsc --noEmit`, `npm run lint`, and `npm run build` all pass clean. Not manually browser-tested (the
+    starry background's star positions/twinkle timing, the sidebar staying put while scrolling a long page
+    on desktop vs. correctly *not* being sticky on mobile, the month-picker's year-cap behavior at the
+    boundary, and the flip-card fix actually looking attached mid-animation) — build/lint-checked only.
+
 - **Ported 2 specific visual details from a user-supplied AI design mockup** (a zipped static HTML/CSS/JS
   handoff, not a real design tool file — `planner.css`/`planner-pages.css` were read directly for exact
   values), explicitly *not* the whole mockup — user asked to keep the current structure/composition and
@@ -491,6 +535,14 @@ _Last updated: 2026-07-30_
 
 ## Next steps (priority order)
 
+-5. Not manually browser-tested (this session's batch): the dark-mode starry background (toggle to dark mode
+   and confirm the navy/purple gradient + twinkling stars render, and that page content still sits visibly
+   above the fixed star layer, not behind it), the sidebar staying fixed while scrolling a long page on a
+   desktop-width window (and confirm it's *not* sticky on a narrow/mobile width, where it should scroll
+   normally with the page), the monthly calendar's new year/month picker (click the "yyyy년 M월" title,
+   confirm the `>` year arrow disables at `currentYear + 3`, confirm picking a month closes the modal and
+   navigates), and the vocab quiz `FlipCard`'s ★/▲ marks visually flipping with the card instead of sitting
+   static on top.
 -4. Not manually browser-tested: the new "TODAY" corner badge on the monthly calendar (especially when
    today falls in the calendar's very first visible row — make sure it's not clipped by the card's own
    rounded-corner `overflow-hidden`), the sidebar's new diagonal active-tab gradient and dashed mascot-card

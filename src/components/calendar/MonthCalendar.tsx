@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   addMonths,
   differenceInCalendarDays,
@@ -22,6 +22,8 @@ import { eventColor, filterEventsForTab, groupEventsByDate, isBarEvent } from "@
 import type { PlannerEvent } from "@/types/event";
 import { PixelCard } from "@/components/ui/PixelCard";
 import { PixelIconButton } from "@/components/ui/PixelIconButton";
+import { PixelModal } from "@/components/ui/PixelModal";
+import { MiniMonthYearPicker } from "@/components/calendar/MiniMonthYearPicker";
 
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -105,6 +107,7 @@ interface MonthCalendarProps {
 }
 
 export function MonthCalendar({ monthDate, onMonthChange, events, onSelectDate }: MonthCalendarProps) {
+  const [pickingMonth, setPickingMonth] = useState(false);
   const gridStart = startOfWeek(startOfMonth(monthDate), { weekStartsOn: 0 });
   const gridEnd = endOfWeek(endOfMonth(monthDate), { weekStartsOn: 0 });
   const allDays = eachDayOfInterval({ start: gridStart, end: gridEnd });
@@ -126,11 +129,27 @@ export function MonthCalendar({ monthDate, onMonthChange, events, onSelectDate }
         <PixelIconButton onClick={() => onMonthChange(subMonths(monthDate, 1))} aria-label="이전 달">
           {"<"}
         </PixelIconButton>
-        <h2 className="font-cute text-2xl">{format(monthDate, "yyyy년 M월")}</h2>
+        <button
+          type="button"
+          onClick={() => setPickingMonth(true)}
+          className="font-cute text-2xl cursor-pointer hover:underline"
+        >
+          {format(monthDate, "yyyy년 M월")}
+        </button>
         <PixelIconButton onClick={() => onMonthChange(addMonths(monthDate, 1))} aria-label="다음 달">
           {">"}
         </PixelIconButton>
       </div>
+
+      <PixelModal open={pickingMonth} onClose={() => setPickingMonth(false)} title="연/월 선택" emoji="🗓️">
+        <MiniMonthYearPicker
+          value={monthDate}
+          onSelect={(d) => {
+            onMonthChange(d);
+            setPickingMonth(false);
+          }}
+        />
+      </PixelModal>
 
       <div className="grid grid-cols-7 gap-1 mb-1">
         {WEEKDAY_LABELS.map((d) => (
