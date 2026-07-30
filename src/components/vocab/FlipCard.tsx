@@ -41,14 +41,15 @@ export function FlipCard({ word, onToggleStarred, onToggleTriangled }: FlipCardP
 
       {onToggleStarred && (
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             onToggleStarred(word);
           }}
           aria-label="별표 (어려운 단어)"
           title="별표 (어려운 단어)"
-          className={`absolute top-1.5 left-1.5 z-10 font-pixel text-[10px] px-1.5 py-1 border-2 border-pixel-border rounded-[6px] cursor-pointer ${
-            word.is_starred ? "bg-pixel-red text-pixel-bg" : "bg-pixel-panel"
+          className={`absolute top-1.5 left-1.5 z-20 font-pixel text-[10px] px-1.5 py-1 border-2 border-pixel-border rounded-[6px] cursor-pointer ${
+            word.is_starred ? "bg-pixel-yellow text-pixel-chip-ink" : "bg-pixel-panel text-pixel-ink"
           }`}
         >
           ★
@@ -57,14 +58,15 @@ export function FlipCard({ word, onToggleStarred, onToggleTriangled }: FlipCardP
 
       {onToggleTriangled && (
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             onToggleTriangled(word);
           }}
           aria-label="세모 (이제 잘 아는 단어)"
           title="세모 (이제 잘 아는 단어)"
-          className={`absolute top-1.5 right-1.5 z-10 font-pixel text-[10px] px-1.5 py-1 border-2 border-pixel-border rounded-[6px] cursor-pointer ${
-            word.is_triangled ? "bg-pixel-mint text-pixel-chip-ink" : "bg-pixel-panel"
+          className={`absolute top-1.5 right-1.5 z-20 font-pixel text-[10px] px-1.5 py-1 border-2 border-pixel-border rounded-[6px] cursor-pointer ${
+            word.is_triangled ? "bg-pixel-mint text-pixel-chip-ink" : "bg-pixel-panel text-pixel-ink"
           }`}
         >
           ▲

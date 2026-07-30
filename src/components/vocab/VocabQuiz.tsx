@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { VocabGroup, VocabWord } from "@/types/vocab";
 import { FlipCard } from "@/components/vocab/FlipCard";
 import { PixelCard } from "@/components/ui/PixelCard";
@@ -43,6 +43,26 @@ export function VocabQuiz({ words, groups, onToggleStarred, onToggleTriangled }:
   const [markFilter, setMarkFilter] = useState<MarkFilter>("all");
   const [count, setCount] = useState(5);
   const [deck, setDeck] = useState<VocabWord[] | null>(null);
+
+  useEffect(() => {
+    if (!deck) return;
+    const wordMap = new Map(words.map((w) => [w.id, w]));
+    setDeck((prevDeck) => (prevDeck ? prevDeck.map((w) => wordMap.get(w.id) ?? w) : null));
+  }, [words]);
+
+  function handleToggleStarred(word: VocabWord) {
+    setDeck((prev) =>
+      prev ? prev.map((w) => (w.id === word.id ? { ...w, is_starred: !w.is_starred } : w)) : null,
+    );
+    onToggleStarred(word);
+  }
+
+  function handleToggleTriangled(word: VocabWord) {
+    setDeck((prev) =>
+      prev ? prev.map((w) => (w.id === word.id ? { ...w, is_triangled: !w.is_triangled } : w)) : null,
+    );
+    onToggleTriangled(word);
+  }
 
   const pool = useMemo(() => {
     return words
@@ -197,8 +217,8 @@ export function VocabQuiz({ words, groups, onToggleStarred, onToggleTriangled }:
           <FlipCard
             key={word.id}
             word={word}
-            onToggleStarred={onToggleStarred}
-            onToggleTriangled={onToggleTriangled}
+            onToggleStarred={handleToggleStarred}
+            onToggleTriangled={handleToggleTriangled}
           />
         ))}
       </div>
