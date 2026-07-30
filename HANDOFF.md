@@ -7,6 +7,64 @@ _Last updated: 2026-07-30_
 
 ## Tried
 
+- **Followed the design-mockup zip's *actual code* more literally for the sidebar/calendar** (previous round
+  had adapted the mockup loosely; this round the user pushed back — "코드도 줬잖아, 그대로 하면 되잖아" — so
+  this pass reads `planner-app.js`'s `renderSidebar()` and `planner-pages.css`'s `.cal-cell`/`.progress-fill`
+  directly instead of eyeballing screenshots):
+  - **Sidebar is now one single wrapping `div`, not 3 separate floating cards.** Previously `Sidebar.tsx` had
+    3 sibling divs each with their own `bg-pixel-panel border-2 rounded shadow` (profile card / nav / mascot
+    card), which is exactly what the user was pointing at as wrong ("하나하나 다 떨어져있는게 아니고"). Now
+    there's exactly one outer div carrying `bg-pixel-panel border-2 border-pixel-border rounded-[24px]
+    shadow-[var(--pixel-shadow)] p-4 flex flex-col gap-3` (this same div is also the `md:sticky` positioning
+    element — collapsed into one, not nested), matching the mockup's `renderSidebar()` structure 1:1: a brand
+    row (avatar+name+subtitle+theme-toggle) separated from the nav list by a `border-b-2 border-dashed`
+    (mirrors `.brand{border-bottom:2px dashed}`), then the nav `<nav>`, then the mascot/greeting box. Since
+    nav items no longer need to look like individual floating buttons (they're list rows inside one shared
+    panel now), their inactive state dropped its own `bg-pixel-panel border shadow` in favor of
+    `border-transparent hover:bg-pixel-bg` (matches `.nav-item{border:1.5px solid transparent}
+    .nav-item:hover{background:var(--paper-2)}`) — only the active pill still gets a visible fill/border. The
+    mascot box's background changed from matching the outer panel color (which would've made it blend in
+    invisibly now that the outer div itself is that color) to a soft `from-pixel-purple/10 to-pixel-pink/10`
+    gradient tint, approximating the mockup's `.side-mascot{background:linear-gradient(135deg,lav-50,peach-50)}`
+    with this app's own purple/pink accent vars at low opacity (no `-50`-tier lightened tokens exist in this
+    codebase's palette, so used alpha instead of adding new tokens). The sticky height switched from
+    `md:max-h-[calc(100vh-2rem)]` (shrinks to fit content) to `md:h-[calc(100vh-2rem)]` (mockup's
+    `.sidebar{height:calc(100vh-40px)}` is a fixed height, not a cap) — the sidebar panel now visibly extends
+    close to the full viewport height with empty space below the mascot box when content is short, same look
+    as both `monthly-light.jpg`/`monthly-dark.jpg` reference screenshots, still `overflow-y-auto` as a
+    safety fallback if content ever grows past that. The mobile-scroll fade-hint on the nav also switched
+    `from-pixel-bg` → `from-pixel-panel` since its backdrop is now the panel color, not the bare page bg.
+  - **Progress bar gradient now matches `.progress-fill` exactly**: `--gradient-cheer` in `globals.css` changed
+    from a 2-stop purple→pink (`#b79cf0, #f7a8c9`) to the mockup's literal 3-stop
+    `linear-gradient(90deg, #a688dd, #f28ba5, #f4a58a)` (lav-500 → coral-500 → peach-500 — reads as
+    purple→pink→orange, which is what the user was pointing at in the reference images). This is the single
+    shared token every `ProgressBar` usage (오늘의 Routine, 오늘의/이달의 TODO, 오늘의 일정) already reads, so
+    no per-component changes needed.
+  - **`PixelButton` text size reduced one step** (`text-xl` → `text-base`, kept `font-bold`) — closer to the
+    mockup's `.btn{font-size:15px}`. This is the shared primary-action button component used app-wide, so
+    the shrink is global by design, matching "버튼들 글씨크기 좀만 줄여줘" (didn't touch call sites that
+    already pass their own explicit `text-*` override, e.g. small icon/inline buttons — those were already
+    smaller than `text-xl` to begin with).
+  - **`MonthCalendar.tsx` day cells now have their own visible background box** (`bg-pixel-bg` added to
+    non-today cells — previously fully transparent, showing nothing but the card's own panel color, so
+    adjacent days weren't visually distinguishable as separate boxes at rest, unlike the reference screenshots
+    where every cell reads as a subtly-shaded rounded rectangle). Cell `border-radius` bumped `10px→14px` and
+    the grid gap (weekday header row, day grid, and the multi-day-bar overlay grid — all three kept in sync so
+    bars still align with their date columns) `4px→6px`, both matching `.cal-cell`/`.cal-grid` literal values.
+    Added a hover shadow (`hover:shadow-[var(--pixel-shadow-sm)]`) alongside the existing hover border/lift,
+    matching `.cal-cell:hover`. Also added Sunday/Saturday coloring to both the weekday header labels and the
+    day-number text (red for Sun, blue for Sat, skipped on the "today" cell which keeps its own ink color) —
+    matches `.cal-dow.sun`/`.cal-dow.sat`/`.cal-num.sun`/`.cal-num.sat`, a literal detail from the CSS that
+    had been missed in the earlier looser pass. Deliberately did **not** change the "TODAY" badge (already
+    confirmed correct against the reference screenshot in an earlier round — the mockup's own `.cal-badge`/
+    `::before` heart CSS is dead code never rendered by its demo JS, the screenshot is ground truth) and did
+    **not** port the mockup's bottom `.month-summary` stat-strip (explicitly declined by the user previously).
+  - `npx tsc --noEmit`, `npm run lint`, `npm run build` all pass clean. Not manually browser-tested (the
+    merged single-panel sidebar's spacing/dashed-separator look, the sidebar's new fixed near-full-viewport
+    height with trailing empty space, the 3-stop progress gradient rendering smoothly, the smaller button
+    text not clipping any fixed-width buttons, and the calendar cells' new visible background boxes + Sun/Sat
+    coloring in both light and dark mode) — build/lint-checked only, same as every other batch this session.
+
 - **Made the vocab tab and chat tab fill the screen height (viewport-proportional, not a fixed px cap), and
   gave the chat's assistant messages a Gemini-style gradient avatar**:
   - **Vocab tab (`VocabQuizTab.tsx`)**: both `VocabWordManager.tsx` and `VocabQuiz.tsx` gained an optional

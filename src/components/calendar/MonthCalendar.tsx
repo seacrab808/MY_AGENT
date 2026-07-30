@@ -151,9 +151,14 @@ export function MonthCalendar({ monthDate, onMonthChange, events, onSelectDate }
         />
       </PixelModal>
 
-      <div className="grid grid-cols-7 gap-1 mb-1">
-        {WEEKDAY_LABELS.map((d) => (
-          <div key={d} className="font-cute text-center text-sm text-pixel-ink-soft">
+      <div className="grid grid-cols-7 gap-1.5 mb-1">
+        {WEEKDAY_LABELS.map((d, i) => (
+          <div
+            key={d}
+            className={`font-cute text-center text-sm ${
+              i === 0 ? "text-pixel-red" : i === 6 ? "text-pixel-blue" : "text-pixel-ink-soft"
+            }`}
+          >
             {d}
           </div>
         ))}
@@ -168,7 +173,7 @@ export function MonthCalendar({ monthDate, onMonthChange, events, onSelectDate }
 
           return (
             <div key={toDateKey(weekStart)} className="relative">
-              <div className="grid grid-cols-7 gap-1">
+              <div className="grid grid-cols-7 gap-1.5">
                 {weekDays.map((day, dayIndex) => {
                   const dateKey = toDateKey(day);
                   const dotEvents = (monthEventsByDate[dateKey] ?? []).filter((e) => !isBarEvent(e));
@@ -196,10 +201,10 @@ export function MonthCalendar({ monthDate, onMonthChange, events, onSelectDate }
                     <button
                       key={dateKey}
                       onClick={() => onSelectDate(dateKey)}
-                      className={`relative min-h-[76px] sm:min-h-[92px] flex flex-col items-center justify-start p-1 rounded-[10px] border-2 cursor-pointer transition-transform ${
+                      className={`relative min-h-[76px] sm:min-h-[92px] flex flex-col items-center justify-start p-1 rounded-[14px] border-2 cursor-pointer transition-transform ${
                         todayFlag
                           ? "border-pixel-purple bg-gradient-to-br from-[var(--today-cell-from)] to-[var(--today-cell-to)] shadow-[var(--pixel-shadow-sm)] text-pixel-ink"
-                          : "border-transparent hover:border-pixel-border hover:-translate-y-0.5 overflow-hidden"
+                          : "bg-pixel-bg border-transparent hover:border-pixel-border hover:-translate-y-0.5 hover:shadow-[var(--pixel-shadow-sm)] overflow-hidden"
                       } ${!inMonth ? "opacity-35" : ""}`}
                       style={{ paddingBottom: laneCount * (BAR_ROW_HEIGHT + BAR_ROW_GAP) + 4 }}
                     >
@@ -209,7 +214,19 @@ export function MonthCalendar({ monthDate, onMonthChange, events, onSelectDate }
                           TODAY
                         </span>
                       )}
-                      <span className="font-cute text-base leading-none mt-1">{format(day, "d")}</span>
+                      <span
+                        className={`font-cute text-base leading-none mt-1 ${
+                          todayFlag
+                            ? ""
+                            : dayIndex === 0
+                              ? "text-pixel-red"
+                              : dayIndex === 6
+                                ? "text-pixel-blue"
+                                : ""
+                        }`}
+                      >
+                        {format(day, "d")}
+                      </span>
                       <div
                         className="flex items-center gap-0.5 flex-nowrap justify-center"
                         style={{ marginTop: dotsMarginTop }}
@@ -232,7 +249,7 @@ export function MonthCalendar({ monthDate, onMonthChange, events, onSelectDate }
 
               {bars.length > 0 && (
                 <div
-                  className="absolute left-0 right-0 grid grid-cols-7 gap-x-1"
+                  className="absolute left-0 right-0 grid grid-cols-7 gap-x-1.5"
                   style={{ top: BAR_TOP_OFFSET, gridAutoRows: BAR_ROW_HEIGHT, rowGap: BAR_ROW_GAP }}
                 >
                   {bars.map((seg) => (

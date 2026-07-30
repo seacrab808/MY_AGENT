@@ -19,8 +19,9 @@
   --pixel-sky-top: #d3e2ff;
   --pixel-sky-bottom: #ffddec;
 
-  /* 보라 -> 핑크 그라데이션. progress bar(오늘의 Routine/TODO/일정, 이달의 TODO)에서 공용으로 사용 */
-  --gradient-cheer: linear-gradient(90deg, #b79cf0, #f7a8c9);
+  /* 보라 -> 코랄 -> 피치 그라데이션(디자인 목업의 .progress-fill 그대로). progress bar(오늘의
+     Routine/TODO/일정, 이달의 TODO)에서 공용으로 사용 */
+  --gradient-cheer: linear-gradient(90deg, #a688dd, #f28ba5, #f4a58a);
 
   /* GitHub 잔디 칸 색상(0=커밋 없음 ~ 4=제일 많음). 라이트/다크 모드에서 값이 달라짐(아래 .dark 참고) */
   --contrib-0: #ece3f5;
