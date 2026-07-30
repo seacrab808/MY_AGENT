@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { parseISO } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import type { RoutineItem, RoutinePeriod } from "@/types/routine";
 import { PixelInput } from "@/components/ui/PixelInput";
@@ -20,6 +21,7 @@ export function RoutineChecklist({ userId, period, dateKey, label, emoji }: Rout
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     const supabase = createClient();
     supabase
       .from("routines")
@@ -27,11 +29,43 @@ export function RoutineChecklist({ userId, period, dateKey, label, emoji }: Rout
       .eq("period", period)
       .eq("routine_date", dateKey)
       .order("created_at", { ascending: true })
-      .then(({ data, error }) => {
-        if (!error) setItems((data ?? []) as RoutineItem[]);
+      .then(async ({ data, error }) => {
+        if (!error && data && data.length > 0) {
+          setItems(data as RoutineItem[]);
+          setLoading(false);
+          return;
+        }
+
+        // 해당 날짜/시간대에 아직 등록된 루틴이 없다면 요일별 프리셋 자동 생성
+        const dow = parseISO(dateKey).getDay();
+        const { data: presetData } = await supabase
+          .from("routine_presets")
+          .select("label")
+          .eq("period", period)
+          .eq("day_of_week", dow)
+          .order("created_at", { ascending: true });
+
+        if (presetData && presetData.length > 0) {
+          const newRows = presetData.map((p) => ({
+            user_id: userId,
+            period,
+            routine_date: dateKey,
+            label: p.label,
+            is_done: false,
+          }));
+
+          const { data: insertedData } = await supabase
+            .from("routines")
+            .insert(newRows)
+            .select();
+
+          setItems((insertedData ?? []) as RoutineItem[]);
+        } else {
+          setItems([]);
+        }
         setLoading(false);
       });
-  }, [period, dateKey]);
+  }, [userId, period, dateKey]);
 
   async function handleAdd(e: FormEvent) {
     e.preventDefault();

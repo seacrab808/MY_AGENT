@@ -18,3 +18,12 @@ export interface DiaryEntry {
   created_at: string;
   updated_at: string;
 }
+
+export interface RoutinePreset {
+  id: string;
+  user_id: string;
+  day_of_week: number; // 0(Sun) ~ 6(Sat)
+  period: RoutinePeriod;
+  label: string;
+  created_at: string;
+}
