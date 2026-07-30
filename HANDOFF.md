@@ -30,23 +30,33 @@ _Last updated: 2026-07-30_
   file a second time would error on already-created policies. Extracted the not-yet-applied attachments
   schema/storage additions out of `schema.sql` into `supabase/migrations/0001_event_attachments.sql`;
   `schema.sql` is now frozen back to exactly what's already been applied.
+- Added vocab-card groups (e.g. DAY1/DAY2), independent star (★, "어려운 단어") / triangle (▲, "이제 잘
+  아는 단어") marks replacing the old single `is_difficult` flag, group multi-select + mark filter when
+  building a quiz, and an Enter-key UX fix so adding a word returns focus to the term field.
+- Established this file (`HANDOFF.md`) and the git auto-commit/push convention per explicit user request —
+  see `CLAUDE.md` "Workflow rules" for the exact rules going forward.
 
 ## Done (verified working)
 
-- `npx tsc --noEmit`, `npx eslint src`, and `npm run build` all pass clean as of this handoff.
+- `npx tsc --noEmit`, `npx eslint src`, and `npm run build` all pass clean as of this handoff (checked
+  after every feature batch, not just once at the end).
 - Confirmed via a standalone script that `gemini-flash-latest` correctly parses a Korean range-event
   message ("8월 23일부터 24일까지 제주도 여행이 있어") into `event_date`/`event_end_date`.
 - Confirmed the multi-day overlap query (`fetchEventsForRange` in `src/lib/events.ts`) constructs correct
   PostgREST `.or()` filter syntax (checked the literal generated URL, not just reasoning about it).
 - Not manually browser-tested end-to-end (no login credentials available in this environment) — type/lint/
-  build passing is the extent of verification for the UI flows above.
+  build passing is the extent of verification for the UI flows in this handoff (calendar features AND the
+  new vocab groups/marks feature).
+- Committed and pushed to `origin/main` (https://github.com/seacrab808/MY_AGENT.git).
 
 ## Failed / blocked
 
-- **`supabase/migrations/0001_event_attachments.sql` has not been run against the live Supabase project
-  yet.** Until the user runs it, uploading attachments/photos will fail (missing columns + missing storage
-  bucket). This is the single most likely thing to look like a "bug" next session — check this first if
-  attachment upload errors.
+- **Two migration files have not been run against the live Supabase project yet:**
+  `supabase/migrations/0001_event_attachments.sql` (attachment columns + storage bucket — needed for
+  photo/file upload to work) and `supabase/migrations/0002_vocab_groups_marks.sql` (vocab_groups table +
+  group_id/is_starred/is_triangled columns on vocab_words — needed for the new grouping/marking feature).
+  Until the user runs both, those two features will error at the DB layer. **Check this first** if either
+  area looks broken next session.
 - Did **not** build a true WYSIWYG rich-text editor with images embedded at the cursor position inside
   free-flowing memo text. Deliberately scoped down to: a drop-zone over the memo area that uploads images
   as separate resizable cards displayed alongside the memo text (not interleaved within it). This satisfies
@@ -59,15 +69,18 @@ _Last updated: 2026-07-30_
   picker mitigates this (jump straight to any date) but the tabs still don't share a "currently viewed date."
   Not fixed because it wasn't asked for directly — the earlier "event not showing in daily" report turned
   out to be exactly this (user was on today, not on the trip's date range), not a data bug.
+- Vocab groups: did not add drag-to-reorder groups or bulk move-word-between-groups. Not asked for; flagging
+  only so it isn't assumed done.
 
 ## Next steps (priority order)
 
-1. **User needs to run `supabase/migrations/0001_event_attachments.sql`** in the Supabase SQL Editor before
-   attachments/photo upload can work at all.
-2. Manually verify in a real browser once logged in: multi-day bar rendering across a month boundary,
-   color picker, event edit/delete/duplicate, and attachment upload/resize — none of this has had human eyes
-   on it yet, only automated build/lint checks.
+1. **User needs to run both pending migration files** in the Supabase SQL Editor, in order:
+   `supabase/migrations/0001_event_attachments.sql` then `0002_vocab_groups_marks.sql`.
+2. Manually verify in a real browser once logged in: multi-day bar rendering across a month boundary, color
+   picker, event edit/delete/duplicate, attachment upload/resize, and the new vocab group create/rename/
+   delete + star/triangle quiz filtering — none of this has had human eyes on it yet, only automated
+   build/lint checks.
 3. If the user wants true inline (cursor-position) image embedding in memos instead of the current
-   below-text resizable-card gallery, that's a scope decision to raise with them before implementing —  see
+   below-text resizable-card gallery, that's a scope decision to raise with them before implementing — see
    "Failed / blocked" above.
 4. Nothing else currently queued.

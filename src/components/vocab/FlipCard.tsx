@@ -5,10 +5,11 @@ import type { VocabWord } from "@/types/vocab";
 
 interface FlipCardProps {
   word: VocabWord;
-  onToggleDifficult?: (word: VocabWord) => void;
+  onToggleStarred?: (word: VocabWord) => void;
+  onToggleTriangled?: (word: VocabWord) => void;
 }
 
-export function FlipCard({ word, onToggleDifficult }: FlipCardProps) {
+export function FlipCard({ word, onToggleStarred, onToggleTriangled }: FlipCardProps) {
   const [flipped, setFlipped] = useState(false);
 
   return (
@@ -23,9 +24,11 @@ export function FlipCard({ word, onToggleDifficult }: FlipCardProps) {
       >
         <div
           className={`absolute inset-0 [backface-visibility:hidden] border-[3px] border-pixel-border rounded-[14px] flex items-center justify-center p-3 text-center shadow-[var(--pixel-bevel)] text-pixel-chip-ink ${
-            word.is_difficult
+            word.is_starred
               ? "bg-gradient-to-b from-[#ffedb0] to-pixel-yellow"
-              : "bg-gradient-to-b from-white to-pixel-panel text-pixel-chip-ink"
+              : word.is_triangled
+                ? "bg-gradient-to-b from-[#cdf5e0] to-pixel-mint"
+                : "bg-gradient-to-b from-white to-pixel-panel"
           }`}
         >
           <p className="font-cute text-xl break-words">{word.term}</p>
@@ -36,19 +39,35 @@ export function FlipCard({ word, onToggleDifficult }: FlipCardProps) {
         </div>
       </div>
 
-      {onToggleDifficult && (
+      {onToggleStarred && (
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onToggleDifficult(word);
+            onToggleStarred(word);
           }}
-          aria-label="어려운 단어 표시"
-          title="어려운 단어로 표시"
-          className={`absolute top-1.5 right-1.5 z-10 font-pixel text-[10px] px-1.5 py-1 border-2 border-pixel-border rounded-[6px] cursor-pointer ${
-            word.is_difficult ? "bg-pixel-red text-pixel-bg" : "bg-pixel-panel"
+          aria-label="별표 (어려운 단어)"
+          title="별표 (어려운 단어)"
+          className={`absolute top-1.5 left-1.5 z-10 font-pixel text-[10px] px-1.5 py-1 border-2 border-pixel-border rounded-[6px] cursor-pointer ${
+            word.is_starred ? "bg-pixel-red text-pixel-bg" : "bg-pixel-panel"
           }`}
         >
-          ✎
+          ★
+        </button>
+      )}
+
+      {onToggleTriangled && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleTriangled(word);
+          }}
+          aria-label="세모 (이제 잘 아는 단어)"
+          title="세모 (이제 잘 아는 단어)"
+          className={`absolute top-1.5 right-1.5 z-10 font-pixel text-[10px] px-1.5 py-1 border-2 border-pixel-border rounded-[6px] cursor-pointer ${
+            word.is_triangled ? "bg-pixel-mint text-pixel-chip-ink" : "bg-pixel-panel"
+          }`}
+        >
+          ▲
         </button>
       )}
     </div>
