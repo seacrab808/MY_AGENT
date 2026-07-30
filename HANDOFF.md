@@ -7,6 +7,40 @@ _Last updated: 2026-07-30_
 
 ## Tried
 
+- **GitHub 잔디 card rebuilt as a self-rendered, theme-aware, rounded-corner grid** — the previous
+  `https://ghchart.rshah.org/{username}` `<img>` couldn't be restyled at all (it's a flat external image),
+  so it always looked the same in dark mode and its cells were hard squares; the user asked for rounded
+  cells and real dark-mode colors, which required owning the rendering:
+  - New `src/app/api/github-contributions/route.ts`: a server-side proxy to the public
+    `https://github-contributions-api.jogruber.de/v4/{username}?y=last` API (returns `{ total, contributions:
+    [{ date, count, level (0-4) }] }` for the trailing ~year, already bucketed into levels the same way
+    GitHub buckets its own graph) — chosen over scraping `github.com/users/{u}/contributions`'s HTML because
+    that markup changes periodically and scraping is fragile; this JSON API is a known/stable community
+    proxy. Proxied through our own route (not called directly from the browser) to sidestep any CORS
+    uncertainty and normalize error responses (`404` for a bad username → a Korean error string).
+  - `GithubContributionsCard.tsx` rewritten to fetch from that route and render its own grid: `buildWeeks()`
+    chunks the day array into Sunday-start 7-row columns (left-padding with empty cells if the API's first
+    day isn't a Sunday, rather than assuming it always is), `weekMonthLabel()` labels the one column that
+    contains a month's 1st. Each day cell is a `rounded-[3px]` `div` (not a hard square) colored via a new
+    inline `style={{ backgroundColor: 'var(--contrib-{level})' }}` — a legend row (적음 → 많음, same 5
+    swatches) and an on-hover `title` tooltip (`"2026-07-29 · 26회 커밋"`) were added since a plain `<img>`
+    couldn't do either. `data.total.lastYear` is now shown as a "최근 1년간 N회 커밋" line above the grid.
+  - New `--contrib-0`..`--contrib-4` CSS vars in `globals.css`, purple-family to match the app's
+    `--gradient-cheer` branding (light: pale lavender → deep purple; dark: `:root.dark` override goes dark
+    plum → bright pink-purple so filled cells pop against the dark panel) — same "just add a `.dark`
+    override, every consumer picks it up for free" pattern as the rest of the theme tokens, so the grid
+    auto-recolors when the sidebar's light/dark toggle flips, no JS theme-reading needed in the component.
+  - Avoided the same `react-hooks/set-state-in-effect` lint trap hit twice already this session: the
+    contributions-fetch effect doesn't call `setState` synchronously in its body at all (not even a
+    `setLoading(true)`) — instead there's a `fetchedFor` state that only gets set inside the `.then`/`.catch`
+    callbacks, and a derived `loadingData = username !== null && fetchedFor !== username` computed during
+    render covers the loading UI.
+  - Manually verified the new route against a live `npm run dev` instance (already running on port 3000) —
+    `GET /api/github-contributions?username=torvalds` returned real, correctly-shaped JSON
+    (`total.lastYear`, 369 daily entries ending today). Not manually verified in an actual browser (grid
+    layout/colors/rounded corners/dark-mode swap/tooltip) — only the API leg and `npm run build`/`npm run
+    lint` (both clean).
+
 - **User-toggleable light/dark mode from the sidebar**, replacing the old OS-only
   `@media (prefers-color-scheme: dark)` approach:
   - `globals.css`'s dark palette block changed from `@media (prefers-color-scheme: dark) { :root { ... } }`
@@ -420,6 +454,10 @@ _Last updated: 2026-07-30_
 
 ## Next steps (priority order)
 
+-3. Not manually browser-tested: the rebuilt GitHub 잔디 grid — rounded cell corners actually render, month
+   labels line up above the right week column, the legend/tooltip look right, and toggling the sidebar's
+   light/dark switch actually recolors the grid (the `--contrib-*` CSS vars) without a page reload. The API
+   proxy leg itself (`/api/github-contributions`) was confirmed working against a live dev server.
 -2. Not manually browser-tested: the new light/dark toggle — clicking it in the sidebar actually flips the
    whole app's colors, the choice survives a page reload (`localStorage`), and a fresh browser/incognito
    session with no stored preference still respects the OS dark-mode setting on first load. Only
