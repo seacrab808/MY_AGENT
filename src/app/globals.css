@@ -47,7 +47,8 @@
 
   --font-pixel: var(--font-press-start);
   --font-cute: var(--font-gaegu);
-  --font-body: var(--font-noto-kr);
+  /* 본문 글씨체도 귀여운 손글씨 폰트로 통일 (설명/채팅 등 font-body를 쓰는 모든 곳) */
+  --font-body: var(--font-gaegu);
 }
 
 @media (prefers-color-scheme: dark) {

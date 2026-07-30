@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Press_Start_2P, Gaegu, Noto_Sans_KR } from "next/font/google";
+import { Press_Start_2P, Gaegu } from "next/font/google";
 import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 
@@ -9,15 +9,10 @@ const pressStart = Press_Start_2P({
   subsets: ["latin"],
 });
 
+// 귀여운 손글씨 폰트 하나로 font-cute/font-body를 모두 통일 (globals.css 참고)
 const gaegu = Gaegu({
   variable: "--font-gaegu",
   weight: ["400", "700"],
-  subsets: ["latin"],
-});
-
-const notoKr = Noto_Sans_KR({
-  variable: "--font-noto-kr",
-  weight: ["400", "500", "700"],
   subsets: ["latin"],
 });
 
@@ -43,10 +38,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="ko"
-      className={`${pressStart.variable} ${gaegu.variable} ${notoKr.variable} h-full antialiased`}
-    >
+    <html lang="ko" className={`${pressStart.variable} ${gaegu.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         {children}
         <ServiceWorkerRegister />
