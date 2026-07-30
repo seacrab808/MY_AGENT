@@ -40,10 +40,14 @@ export default async function Home() {
     toDateKey(gridEnd),
   );
 
+  const displayName =
+    typeof user.user_metadata?.display_name === "string" ? user.user_metadata.display_name : null;
+
   return (
     <Dashboard
       userId={user.id}
       userEmail={user.email ?? ""}
+      initialDisplayName={displayName}
       initialEvents={initialEvents}
       initialMonth={toDateKey(startOfMonth(now))}
     />

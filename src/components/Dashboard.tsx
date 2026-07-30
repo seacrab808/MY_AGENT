@@ -5,6 +5,7 @@ import { endOfMonth, endOfWeek, format, startOfMonth, startOfWeek } from "date-f
 import { createClient } from "@/lib/supabase/client";
 import { eventDateKeys, fetchEventsForRange, filterEventsForTab, groupEventsByDate } from "@/lib/events";
 import { toDateKey, todayIsMonday, currentWeekRange, KOREAN_WEEKDAY } from "@/lib/date";
+import { fillCheerTemplate, pickRandomCheerTemplate } from "@/lib/greetings";
 import type { PlannerEvent } from "@/types/event";
 import type { TabKey } from "@/lib/tabs";
 import { Sidebar } from "@/components/Sidebar";
@@ -25,15 +26,28 @@ import { logout } from "@/app/actions";
 interface DashboardProps {
   userId: string;
   userEmail: string;
+  initialDisplayName: string | null;
   initialEvents: PlannerEvent[];
   initialMonth: string; // ISO date within the initial month
 }
 
-export function Dashboard({ userId, userEmail, initialEvents, initialMonth }: DashboardProps) {
+export function Dashboard({
+  userId,
+  userEmail,
+  initialDisplayName,
+  initialEvents,
+  initialMonth,
+}: DashboardProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("monthly");
   const [monthDate, setMonthDate] = useState(() => new Date(initialMonth));
   const [events, setEvents] = useState<PlannerEvent[]>(initialEvents);
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string | null>(initialDisplayName);
+
+  // 켤 때마다(마운트마다) 응원 문구를 하나 랜덤으로 뽑음. 계정 탭에서 이름을 바꿔도 문구 자체는
+  // 다시 뽑지 않고(같은 세션 안에서 바뀌면 어색하니) 이름만 새로 끼워 넣음.
+  const [cheerTemplate] = useState(() => pickRandomCheerTemplate());
+  const greeting = fillCheerTemplate(cheerTemplate, displayName?.trim() || "사용자님");
 
   const [weekEvents, setWeekEvents] = useState<PlannerEvent[]>([]);
   const today = useMemo(() => new Date(), []);
@@ -86,18 +100,13 @@ export function Dashboard({ userId, userEmail, initialEvents, initialMonth }: Da
     <div className="flex flex-col flex-1 max-w-7xl w-full mx-auto p-4 gap-4">
       <HeroBanner
         title="🌱 PIXEL PLANNER"
-        subtitle="오늘도 퀘스트를 클리어해볼까요?"
+        subtitle={greeting}
         right={
-          <>
-            <span className="font-body text-xs text-pixel-ink/70 hidden sm:inline bg-white/60 border-2 border-pixel-border rounded-[6px] px-2 py-1">
-              {userEmail}
-            </span>
-            <form action={logout}>
-              <PixelButton type="submit" tone="ink" className="text-sm px-3 py-1.5">
-                로그아웃
-              </PixelButton>
-            </form>
-          </>
+          <form action={logout}>
+            <PixelButton type="submit" tone="ink" className="text-sm px-3 py-1.5">
+              로그아웃
+            </PixelButton>
+          </form>
         }
       />
 
@@ -132,7 +141,14 @@ export function Dashboard({ userId, userEmail, initialEvents, initialMonth }: Da
           {activeTab === "routine_preset" && <RoutinePresetTab userId={userId} />}
           {activeTab === "goals" && <GoalsTab userId={userId} />}
           {activeTab === "vocab" && <VocabQuizTab userId={userId} />}
-          {activeTab === "account" && <AccountTab userId={userId} userEmail={userEmail} />}
+          {activeTab === "account" && (
+            <AccountTab
+              userId={userId}
+              userEmail={userEmail}
+              displayName={displayName}
+              onDisplayNameChange={setDisplayName}
+            />
+          )}
         </div>
       </div>
 

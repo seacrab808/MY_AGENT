@@ -50,6 +50,12 @@ export default function LoginPage() {
           </div>
 
           <form action={action} className="flex flex-col gap-3">
+          {mode === "signup" && (
+            <label className="flex flex-col gap-1">
+              <span className="font-cute text-sm">이름</span>
+              <PixelInput type="text" name="displayName" placeholder="예) 유나" />
+            </label>
+          )}
           <label className="flex flex-col gap-1">
             <span className="font-cute text-sm">이메일</span>
             <PixelInput type="email" name="email" required placeholder="you@example.com" />

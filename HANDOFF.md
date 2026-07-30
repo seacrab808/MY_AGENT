@@ -68,6 +68,38 @@ _Last updated: 2026-07-30_
     *current* style per the user's own framing ("나중에 디자인 싹 바꿀 거니까 지금이랑 비슷하게") — not a
     redesign, just swapping the native widgets for themed equivalents.
 
+- Added self-service password change, a display name, and a randomized greeting banner, all in the "내 계정"
+  tab / signup flow:
+  - **Password change lives in `AccountTab.tsx`'s new `PasswordChangeCard`.** No new DB/API route — it's a
+    3-step client-side state machine (`idle` → `verify` → `change`) using only `supabase-js` calls already
+    available to a logged-in browser session: "비밀번호 변경하기" reveals a 현재 비밀번호 field; submitting
+    that calls `supabase.auth.signInWithPassword({ email, password })` purely as a *verification* check (it
+    re-establishes the same session, doesn't log the user out) — a non-`invalid_credentials` error there
+    means "그 비밀번호가 안 맞다"; success reveals 새 비밀번호 + 확인 fields, and submitting those calls
+    `supabase.auth.updateUser({ password })`. No Supabase migration needed since this only touches
+    `auth.users`, not an app table.
+  - **Display name is stored in Supabase Auth's `user_metadata.display_name`**, not a new DB column — reused
+    the existing `user_settings` pattern's *shape* (small card, load/save, "저장했어요" flash) but skipped a
+    migration entirely since `supabase.auth.updateUser({ data: { display_name } })` already persists
+    per-user and merges into existing metadata rather than overwriting it. `page.tsx` reads
+    `user.user_metadata?.display_name` server-side and passes it into `Dashboard` as `initialDisplayName`;
+    `Dashboard` owns it as state (`displayName`/`setDisplayName`) so saving in `AccountTab` (via the new
+    `onDisplayNameChange` prop) updates the banner greeting immediately, no refetch/reload needed.
+  - **Signup form (`src/app/login/page.tsx`) gained an optional "이름" field**, only rendered in signup mode
+    (not login) — `src/app/login/actions.ts`'s `signup()` action reads `formData.get("displayName")` and
+    passes it as `options: { data: { display_name } }` to `supabase.auth.signUp()`. Already-registered users
+    (signed up before this field existed) just set it later from 내 계정 — same `updateUser` call path as
+    everyone else, no backfill/migration needed since a missing key just reads back as `undefined`.
+  - **Removed the `{userEmail}` badge next to the 로그아웃 button** in `Dashboard.tsx`'s `HeroBanner` — the
+    email is still passed down as a prop (still needed for the password-verify call and shown once inside
+    the 내 계정 tab itself), just no longer rendered in the top bar.
+  - **New `src/lib/greetings.ts`**: a flat list of ~12 Korean "{name}, 오늘도 ~" cheer templates (2nd person,
+    varied emoji/tone) plus `pickRandomCheerTemplate()`/`fillCheerTemplate()`. `Dashboard.tsx` picks one
+    template once per mount (`useState(() => pickRandomCheerTemplate())` — deliberately *not* re-rolled on
+    every render/rerender, only on remount i.e. "매 켤 때마다" per the request) and interpolates the current
+    `displayName` (or `"사용자님"` if unset) into it for the `HeroBanner` subtitle, replacing the old static
+    "오늘도 퀘스트를 클리어해볼까요?" text.
+
 ## Tried (previous sessions, kept for context)
 
 - Reworked event categories/colors, form styling, and calendar bar appearance per explicit request:
@@ -299,6 +331,12 @@ _Last updated: 2026-07-30_
    opens a second `PixelModal` on top — should stack fine since both are simple `fixed inset-0` overlays,
    but hasn't had human eyes on it), and the routine-preset backfill-on-every-visit fix (add a preset, revisit
    an already-opened date, confirm the new item now appears without needing to re-click anything).
+0c. Not manually browser-tested: the new password-change flow end-to-end (wrong current password shows the
+   error and stays on the verify step; correct current password + matching new passwords actually lets you
+   log back in with the new one after signing out), the display-name save updating the banner greeting
+   immediately without a refresh, the signup form's optional 이름 field actually landing in
+   `user_metadata.display_name` for a brand new account, and that the randomized greeting only re-rolls on a
+   fresh page load/tab-mount (not on every keystroke/interaction within the same session).
 1. **Ask the user to check Vercel Project Settings → Environment Variables** for `GEMINI_API_KEY`,
    `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (all three, and note `NEXT_PUBLIC_*` vars need
    a redeploy after being added/changed since they're baked in at build time). This is the leading theory for

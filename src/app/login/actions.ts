@@ -41,12 +41,17 @@ export async function signup(_prev: AuthState, formData: FormData): Promise<Auth
 
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const displayName = String(formData.get("displayName") ?? "").trim();
 
   if (password.length < 6) {
     return { error: "비밀번호는 6자 이상이어야 해요." };
   }
 
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { display_name: displayName || null } },
+  });
 
   if (error) {
     return { error: `가입 실패: ${error.message}` };
