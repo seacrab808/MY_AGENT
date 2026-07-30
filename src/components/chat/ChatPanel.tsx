@@ -12,6 +12,20 @@ interface ChatMessage {
   text: string;
 }
 
+// 상대(AI 일정 비서) 말풍선 옆에 붙는 프로필 아이콘. 제미나이 아이콘처럼 파랑→보라→핑크
+// 그라데이션 원 위에 반짝이(✦) 하나 — 실제 로고를 쓸 수 없으니 같은 톤의 느낌만 근사.
+function AssistantAvatar() {
+  return (
+    <span
+      aria-hidden
+      className="flex items-center justify-center w-7 h-7 rounded-full shrink-0 text-white text-xs shadow-[var(--pixel-shadow-sm)]"
+      style={{ background: "linear-gradient(135deg, #4f9cf6 0%, #a86ef0 55%, #f97ec2 100%)" }}
+    >
+      ✦
+    </span>
+  );
+}
+
 interface ChatPanelProps {
   onEventCreated: (event: PlannerEvent) => void;
 }
@@ -110,23 +124,31 @@ export function ChatPanel({ onEventCreated }: ChatPanelProps) {
   }
 
   return (
-    <PixelCard className="flex flex-col h-full">
+    <PixelCard className="flex flex-col min-h-[calc(100vh-220px)]">
       <h2 className="font-cute text-2xl mb-2 flex items-center gap-2">💬 일정 채팅</h2>
-      <div ref={listRef} className="flex-1 overflow-y-auto flex flex-col gap-2 pr-1 mb-3 min-h-40 max-h-80">
-        {messages.map((m) => (
-          <div
-            key={m.id}
-            className={`font-body text-sm rounded-[10px] px-3 py-2 border-2 border-pixel-border max-w-[85%] whitespace-pre-wrap break-words ${
-              m.role === "user"
-                ? "bg-pixel-blue text-pixel-chip-ink self-end"
-                : "bg-pixel-bg self-start"
-            }`}
-          >
-            {m.text}
-          </div>
-        ))}
+      <div ref={listRef} className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2 pr-1 mb-3">
+        {messages.map((m) =>
+          m.role === "assistant" ? (
+            <div key={m.id} className="flex items-start gap-2 max-w-[85%] lg:max-w-[640px] self-start">
+              <AssistantAvatar />
+              <div className="font-body text-sm rounded-[10px] px-3 py-2 border-2 border-pixel-border bg-pixel-bg whitespace-pre-wrap break-words min-w-0">
+                {m.text}
+              </div>
+            </div>
+          ) : (
+            <div
+              key={m.id}
+              className="font-body text-sm rounded-[10px] px-3 py-2 border-2 border-pixel-border max-w-[85%] lg:max-w-[640px] whitespace-pre-wrap break-words bg-pixel-blue text-pixel-chip-ink self-end"
+            >
+              {m.text}
+            </div>
+          ),
+        )}
         {loading && (
-          <div className="font-body text-sm text-pixel-ink-soft self-start px-3">생각 중...</div>
+          <div className="flex items-start gap-2 self-start">
+            <AssistantAvatar />
+            <div className="font-body text-sm text-pixel-ink-soft px-3 py-2">생각 중...</div>
+          </div>
         )}
       </div>
       <form onSubmit={handleSubmit} className="flex gap-2">

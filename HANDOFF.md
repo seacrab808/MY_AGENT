@@ -7,6 +7,44 @@ _Last updated: 2026-07-30_
 
 ## Tried
 
+- **Made the vocab tab and chat tab fill the screen height (viewport-proportional, not a fixed px cap), and
+  gave the chat's assistant messages a Gemini-style gradient avatar**:
+  - **Vocab tab (`VocabQuizTab.tsx`)**: both `VocabWordManager.tsx` and `VocabQuiz.tsx` gained an optional
+    `className` prop forwarded to their root `PixelCard` (relying on `PixelCard`'s existing behavior of
+    applying `className` to *both* the outer frame and the inner body div — see the comment already in
+    `PixelCard.tsx` — so a single `flex flex-col` + `min-h-[...]` reaches the actual content container, not
+    just the outer border). `VocabQuizTab` passes `className="min-h-[calc(100vh-260px)]"` to whichever of the
+    two is showing. Inside `VocabWordManager.tsx`, the word `<ul>` changed from a fixed `max-h-96
+    overflow-y-auto` to `flex-1 min-h-0 overflow-y-auto` so it actually grows to fill the now-tall card
+    (scrolling internally past that) instead of stopping at 384px regardless of screen size. `VocabQuiz.tsx`'s
+    3 states (empty/setup/active-quiz) all take the same `className` on their respective root `PixelCard`, so
+    the container visually fills the viewport in every state — the active flip-card grid itself wasn't
+    changed (cards keep their fixed `h-36`, per `FlipCard.tsx`; stretching individual card height wasn't
+    asked for and would look wrong for a flashcard), just the surrounding card now extends down the page
+    instead of stopping short and leaving a large blank gap.
+  - **Chat tab**: `ChatTab.tsx` dropped its `max-w-2xl` cap (was clamping width to 672px regardless of screen
+    size — now fills the same width as every other full-width tab). `ChatPanel.tsx`'s root `PixelCard`
+    switched from an ineffective `h-full` (had no explicit-height ancestor to resolve `100%` against, so it
+    was just sized to content) to the same `min-h-[calc(100vh-220px)]` viewport-relative trick, and the
+    message-list `div` dropped its `min-h-40 max-h-80` fixed range in favor of `flex-1 min-h-0` so it
+    actually grows with the taller card (still scrolls internally once messages overflow it). Message bubbles
+    also gained a `lg:max-w-[640px]` cap on top of the existing `max-w-[85%]` so lines don't get uncomfortably
+    long now that the container itself is much wider.
+  - **New `AssistantAvatar` in `ChatPanel.tsx`**: a small circular badge (blue→purple→pink `linear-gradient`,
+    135deg, a ✦ glyph on top) shown next to every assistant message (and the "생각 중..." typing indicator),
+    per the explicit "제미나이 디자인처럼" ask — approximates Gemini's spark-icon assistant avatar treatment
+    with a plain CSS gradient + glyph (no real logo asset used). Only the assistant side got one — user
+    messages are unchanged (still a plain right-aligned bubble, no avatar), matching "상대" (the other party)
+    in the request. Assistant message markup changed from a single bubble `div` to a `flex items-start gap-2`
+    row wrapping `<AssistantAvatar />` + the bubble (bubble itself no longer carries `self-start`/`max-w-*` —
+    those moved to the new wrapper row); user messages are untouched structurally.
+  - `npx tsc --noEmit`, `npm run lint`, `npm run build` all pass clean. The `calc(100vh-260px)`/
+    `calc(100vh-220px)` offsets are hand-estimated from the surrounding header/toggle-row/page-padding stack
+    (same `vh`-based approach the sidebar's own sticky `max-h-[calc(100vh-2rem)]` already uses elsewhere in
+    this codebase), not measured against a live rendered page — the exact gap from the very bottom of the
+    viewport hasn't been eyeballed in a browser yet, so the offset may need a small tweak if there's noticeably
+    too much/too little bottom margin.
+
 - **Applied the Monthly/Daily tabs' "page title" header to every other tab**, and made the daily planner's
   date row use full weekday names:
   - `MonthlyTab.tsx`/`DailyPlannerTab.tsx` already had a standalone (not-in-a-card) header block —

@@ -13,6 +13,7 @@ interface VocabQuizProps {
   groups: VocabGroup[];
   onToggleStarred: (word: VocabWord) => void;
   onToggleTriangled: (word: VocabWord) => void;
+  className?: string;
 }
 
 type MarkFilter = "all" | "starred" | "triangled" | "both";
@@ -35,7 +36,7 @@ function shuffle<T>(arr: T[]): T[] {
 
 const COUNT_OPTIONS = [5, 10, 15, 20];
 
-export function VocabQuiz({ words, groups, onToggleStarred, onToggleTriangled }: VocabQuizProps) {
+export function VocabQuiz({ words, groups, onToggleStarred, onToggleTriangled, className = "" }: VocabQuizProps) {
   const [selectedGroupKeys, setSelectedGroupKeys] = useState<string[]>(() => [
     UNGROUPED,
     ...groups.map((g) => g.id),
@@ -80,7 +81,7 @@ export function VocabQuiz({ words, groups, onToggleStarred, onToggleTriangled }:
 
   if (words.length === 0) {
     return (
-      <PixelCard>
+      <PixelCard className={className}>
         <p className="font-body text-sm text-pixel-ink-soft">
           먼저 &apos;단어 추가&apos;에서 단어를 등록해주세요.
         </p>
@@ -95,7 +96,7 @@ export function VocabQuiz({ words, groups, onToggleStarred, onToggleTriangled }:
     );
 
     return (
-      <PixelCard>
+      <PixelCard className={`flex flex-col ${className}`}>
         <h2 className="font-cute text-2xl mb-3">🎲 퀴즈 시작하기</h2>
 
         <p className="font-body text-sm text-pixel-ink-soft mb-2">그룹 선택 (복수 선택 가능)</p>
@@ -184,7 +185,7 @@ export function VocabQuiz({ words, groups, onToggleStarred, onToggleTriangled }:
   }
 
   return (
-    <PixelCard>
+    <PixelCard className={className}>
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-cute text-2xl">🃏 카드를 클릭해서 뜻을 확인해요</h2>
         <div className="flex gap-2">

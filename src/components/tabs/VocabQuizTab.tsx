@@ -131,6 +131,7 @@ export function VocabQuizTab({ userId }: VocabQuizTabProps) {
           onCreateGroup={handleCreateGroup}
           onRenameGroup={handleRenameGroup}
           onDeleteGroup={handleDeleteGroup}
+          className="min-h-[calc(100vh-260px)]"
         />
       ) : (
         <VocabQuiz
@@ -138,6 +139,7 @@ export function VocabQuizTab({ userId }: VocabQuizTabProps) {
           groups={groups}
           onToggleStarred={handleToggleStarred}
           onToggleTriangled={handleToggleTriangled}
+          className="min-h-[calc(100vh-260px)]"
         />
       )}
     </div>

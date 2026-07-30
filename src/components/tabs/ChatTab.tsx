@@ -9,7 +9,7 @@ interface ChatTabProps {
 
 export function ChatTab({ onEventCreated }: ChatTabProps) {
   return (
-    <div className="flex flex-col gap-4 max-w-2xl">
+    <div className="flex flex-col gap-4">
       <div>
         <h1 className="font-cute text-3xl font-bold">채팅창</h1>
         <p className="font-body text-sm text-pixel-ink-soft">💬 채팅으로 일정을 편하게 등록해요</p>

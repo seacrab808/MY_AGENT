@@ -18,6 +18,7 @@ interface VocabWordManagerProps {
   onCreateGroup: (name: string) => Promise<VocabGroup | null>;
   onRenameGroup: (groupId: string, name: string) => void;
   onDeleteGroup: (groupId: string) => void;
+  className?: string;
 }
 
 export function VocabWordManager({
@@ -30,6 +31,7 @@ export function VocabWordManager({
   onCreateGroup,
   onRenameGroup,
   onDeleteGroup,
+  className = "",
 }: VocabWordManagerProps) {
   const [term, setTerm] = useState("");
   const [meaning, setMeaning] = useState("");
@@ -81,8 +83,8 @@ export function VocabWordManager({
   }
 
   return (
-    <PixelCard>
-      <h2 className="font-cute text-2xl mb-3">🃏 단어 추가</h2>
+    <PixelCard className={`flex flex-col ${className}`}>
+      <h2 className="font-cute text-2xl mb-3 shrink-0">🃏 단어 추가</h2>
 
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <button
@@ -234,7 +236,7 @@ export function VocabWordManager({
           아직 등록된 단어가 없어요. 위에서 추가해보세요!
         </p>
       ) : (
-        <ul className="flex flex-col gap-1.5 max-h-96 overflow-y-auto pr-1">
+        <ul className="flex flex-col gap-1.5 flex-1 min-h-0 overflow-y-auto pr-1">
           {visibleWords.map((word) => (
             <li
               key={word.id}
