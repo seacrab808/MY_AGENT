@@ -7,6 +7,30 @@ _Last updated: 2026-07-30_
 
 ## Tried
 
+- User reported the *same* `/api/chat` 401/502 happens on the Vercel deployment even though it works fine
+  under `npm run dev` locally. Diagnosis (not yet confirmed against the actual Vercel project — no dashboard
+  access from this environment): `.env.local` is git-ignored (correctly), so `GEMINI_API_KEY` /
+  `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` only exist locally unless the user separately
+  entered them in Vercel's Project Settings → Environment Variables. Missing/wrong values there would produce
+  exactly this pair of symptoms: missing `GEMINI_API_KEY` → `getGeminiClient()` throws → caught in
+  `route.ts` → generic 502; missing/wrong Supabase URL/anon key → `auth.getUser()` fails server-side → 401
+  even while the browser looks logged in. **User has not yet confirmed or denied this** (question was asked,
+  conversation moved on to the routine-chat bug below before getting an answer) — follow up next session.
+- Chat only exposed one Gemini function (`create_event`), so a request to add a *recurring* routine (e.g.
+  "월~금 오전 루틴으로 스트레칭 추가해줘") got misparsed as a one-off calendar event landing in the daily
+  planner's "오늘의 일정" list, instead of populating `routine_presets` (the "하루 루틴" tab +
+  `RoutineChecklist`'s 오전/오후/퇴근 후 sections read from `routine_presets` by day-of-week per
+  `RoutineChecklist.tsx`'s auto-generate-from-preset effect). Fixed in `src/app/api/chat/route.ts` by adding
+  a second function declaration `create_routine_preset` (`label` + `period` + `days_of_week: number[]`,
+  0=Sun..6=Sat) and updating the system prompt to route "루틴"/repeating-weekday phrasing there instead of
+  `create_event`. On a match, inserts one `routine_presets` row per weekday in `days_of_week`. Verified with
+  a standalone script (not just reasoning) that Gemini now picks `create_routine_preset` for "월~금 오전
+  루틴..." and "매일 저녁... 루틴..." while still picking `create_event` for a one-off dated request.
+  Note: like the existing manual "하루 루틴" tab flow, this only affects *future* preset lookups —
+  `RoutineChecklist` only auto-generates from presets when a date/period has zero existing `routines` rows,
+  so a day already materialized (e.g. today, if already opened) won't retroactively pick up a preset added
+  after the fact. That's pre-existing behavior, not something this change touches.
+
 - Diagnosed reported "chat AI keeps failing" (browser console showing `/api/chat` 401 then 502). Root cause
   for the 401: `src/middleware.ts`'s matcher excluded `/api/*`, so an expired Supabase access-token cookie
   was never refreshed before `/api/chat`'s own `supabase.auth.getUser()` check ran — the session looked
@@ -108,17 +132,25 @@ _Last updated: 2026-07-30_
 
 ## Next steps (priority order)
 
-1. **Confirm the chat 401 is actually gone**: use the app normally, leave the tab open past an hour (Supabase
-   default access-token TTL), then send a chat message — should no longer 401. If it still does, the refresh
-   token itself may be invalid/revoked (e.g. reuse-detection from multiple tabs) rather than the matcher gap
-   that was just fixed; that would need re-logging-in to confirm, not another code change.
-2. **User needs to run all pending migration files** in the Supabase SQL Editor, in numeric order.
-3. Manually verify in a real browser once logged in: multi-day bar rendering across a month boundary, color
+1. **Ask the user to check Vercel Project Settings → Environment Variables** for `GEMINI_API_KEY`,
+   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (all three, and note `NEXT_PUBLIC_*` vars need
+   a redeploy after being added/changed since they're baked in at build time). This is the leading theory for
+   why prod 401/502s but local `npm run dev` works — see "Tried" above — but it's unconfirmed since the user
+   hasn't answered yet.
+2. **Confirm the chat 401 is actually gone locally too**: use the app normally, leave the tab open past an
+   hour (Supabase default access-token TTL), then send a chat message — should no longer 401. If it still
+   does, the refresh token itself may be invalid/revoked (e.g. reuse-detection from multiple tabs) rather
+   than the matcher gap that was already fixed; that would need re-logging-in to confirm, not another code
+   change.
+3. **User needs to run all pending migration files** in the Supabase SQL Editor, in numeric order.
+4. Manually verify in a real browser once logged in: multi-day bar rendering across a month boundary, color
    picker, event edit/delete/duplicate, attachment upload/resize, vocab group create/rename/delete +
-   star/triangle quiz filtering, and the new O/△/X buttons in the daily planner — none of this has had human
-   eyes on it yet, only automated build/lint checks.
-4. If the user wants true inline (cursor-position) image embedding in memos instead of the current
+   star/triangle quiz filtering, the O/△/X buttons in the daily planner, and the new create_routine_preset
+   chat flow (e.g. "월~금 오전 루틴에 ~ 추가해줘" should show up under "하루 루틴" tab, not as a calendar
+   event) — none of this has had human eyes on it yet, only automated build/lint checks + one isolated
+   Gemini function-calling script.
+5. If the user wants true inline (cursor-position) image embedding in memos instead of the current
    below-text resizable-card gallery, that's a scope decision to raise with them before implementing — see
    "Failed / blocked" above.
-5. If the user wants O/△/X checks in Monthly's day popup or the notification popups too, wire the same
+6. If the user wants O/△/X checks in Monthly's day popup or the notification popups too, wire the same
    `onSetCheckStatus` handler pattern used in `DailyPlannerTab.tsx` into those call sites.
