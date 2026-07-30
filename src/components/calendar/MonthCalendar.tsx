@@ -25,6 +25,11 @@ import { PixelIconButton } from "@/components/ui/PixelIconButton";
 
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 
+// 월간 캘린더의 여러 날 일정 바 크기 (한 곳에서만 조절하면 day cell의 여백 계산과도 항상 맞음)
+const BAR_ROW_HEIGHT = 24;
+const BAR_ROW_GAP = 3;
+const BAR_TOP_OFFSET = 27;
+
 interface BarSegment {
   event: PlannerEvent;
   startCol: number; // 1-7
@@ -37,6 +42,11 @@ interface BarSegment {
 // 바 형태 일정의 (표시상) 종료일: 실제 여러 날 일정이면 event_end_date, 하루짜리 바 일정이면 event_date와 동일
 function barEndDate(event: PlannerEvent): string {
   return event.event_end_date ?? event.event_date;
+}
+
+// 배경만 살짝 불투명하게(반투명) 만들기 위해 hex에 알파 채널을 붙임 (글자색은 그대로 선명하게 유지)
+function withAlpha(hex: string, alphaHex: string): string {
+  return `${hex}${alphaHex}`;
 }
 
 function computeWeekBars(weekStart: Date, weekEnd: Date, events: PlannerEvent[]): BarSegment[] {
@@ -153,7 +163,7 @@ export function MonthCalendar({ monthDate, onMonthChange, events, onSelectDate }
                           ? "border-pixel-border bg-gradient-to-b from-[#ffedb0] to-pixel-yellow shadow-[var(--pixel-bevel)] text-pixel-chip-ink"
                           : "border-transparent hover:border-pixel-border hover:-translate-y-0.5"
                       } ${!inMonth ? "opacity-35" : ""}`}
-                      style={{ paddingBottom: laneCount * 20 + 4 }}
+                      style={{ paddingBottom: laneCount * (BAR_ROW_HEIGHT + BAR_ROW_GAP) + 4 }}
                     >
                       <span className="font-cute text-base leading-none mt-1">{format(day, "d")}</span>
                       <div className="flex gap-0.5 mt-1 flex-wrap justify-center">
@@ -173,19 +183,19 @@ export function MonthCalendar({ monthDate, onMonthChange, events, onSelectDate }
               {bars.length > 0 && (
                 <div
                   className="absolute left-0 right-0 grid grid-cols-7 gap-x-1"
-                  style={{ top: 26, gridAutoRows: 18, rowGap: 2 }}
+                  style={{ top: BAR_TOP_OFFSET, gridAutoRows: BAR_ROW_HEIGHT, rowGap: BAR_ROW_GAP }}
                 >
                   {bars.map((seg) => (
                     <div
                       key={`${seg.event.id}-${seg.startCol}`}
                       title={seg.event.title}
-                      className={`flex items-center px-1 text-xs sm:text-sm font-body font-medium leading-none truncate border-y-2 border-pixel-border ${
-                        seg.roundedLeft ? "rounded-l-[6px] border-l-2" : "-ml-1"
-                      } ${seg.roundedRight ? "rounded-r-[6px] border-r-2" : "-mr-1"}`}
+                      className={`flex items-center px-2 text-sm font-body font-medium leading-none truncate ${
+                        seg.roundedLeft ? "rounded-l-[10px]" : "-ml-1"
+                      } ${seg.roundedRight ? "rounded-r-[10px]" : "-mr-1"}`}
                       style={{
                         gridColumn: `${seg.startCol} / ${seg.startCol + seg.span}`,
                         gridRow: seg.lane + 1,
-                        backgroundColor: eventColor(seg.event),
+                        backgroundColor: withAlpha(eventColor(seg.event), "d9"),
                         color: "var(--pixel-chip-ink)",
                       }}
                     >

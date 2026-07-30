@@ -7,6 +7,43 @@ _Last updated: 2026-07-30_
 
 ## Tried
 
+- Reworked event categories/colors, form styling, and calendar bar appearance per explicit request:
+  - **Category set changed and colors are now fixed per category, not user-picked.** `EventCategory` is now
+    `general | travel | important | meeting | conference` (was `general | dday | exam | meeting`).
+    `CATEGORY_COLOR_HEX` in `src/lib/events.ts` is the single source of truth (하늘색/초록색/빨간색/보라색/
+    노란색) and `eventColor()` now ignores `PlannerEvent.color` entirely — it derives purely from category.
+    `supabase/migrations/0007_event_category_rename.sql` renames existing rows (`dday`→`important`,
+    `exam`→`conference`; `general`/`meeting` unchanged). `PlannerEvent.color` DB column/type field is kept
+    but is now dead/unused (avoids a schema migration to drop it; see CLAUDE.md's updated category note).
+    `EventForm.tsx`'s color-swatch picker (`PASTEL_COLOR_PRESETS`, now deleted from `src/lib/events.ts`) is
+    gone — category buttons themselves now preview/apply the fixed color (selected = filled with that
+    category's color, unselected = small color dot + outline). `src/app/api/chat/route.ts`'s Gemini
+    `create_event` function's `category` enum/description updated to match.
+  - **New `PixelCheckbox.tsx`** (`src/components/ui/`) replaces bare `<input type="checkbox">` in
+    `EventForm.tsx`'s 3 checkboxes (multi-day / bar-display / has-time) with a themed custom checkbox
+    (`appearance-none` + a `peer`-driven SVG checkmark, pixel-bordered square that fills `pixel-yellow` with
+    a check glyph when ticked).
+  - **`EventForm.tsx` fonts unified to the cute handwriting font** (`font-cute`, Gaegu) throughout — labels/
+    category buttons/textarea/error text now use the class directly; the shared `PixelInput` component
+    hardcodes `font-body` internally, so those specific fields (title, date, time inputs) get an inline
+    `style={{ fontFamily: "var(--font-cute)" }}` override instead of relying on Tailwind class-order cascade
+    (which isn't guaranteed to win). Scoped to `EventForm` only, not a global `PixelInput` change — other
+    call sites (login, reschedule modal's date picker) still use the default body font.
+  - **Month calendar bars (`MonthCalendar.tsx`) made chunkier, borderless, and slightly translucent**: row
+    height 18→24px, row gap 2→3px (both pulled into named constants `BAR_ROW_HEIGHT`/`BAR_ROW_GAP` also used
+    for the day-cell `paddingBottom` reservation so they can't drift out of sync), removed the
+    `border-y-2`/`border-l-2`/`border-r-2` classes entirely, rounded end-caps bumped 6px→10px, and background
+    goes through a new `withAlpha()` helper that appends an 8-digit-hex alpha channel (`d9` ≈ 85%) to the
+    category color — deliberately alpha-on-background-only (not a plain CSS `opacity` on the div) so the
+    `--pixel-chip-ink` title text stays fully legible instead of fading too.
+  - **`PixelButton.tsx` text made bold and one size up** (`text-lg`→`text-xl`, added `font-bold`) — this is
+    the shared component used for essentially every labeled action button app-wide (등록/저장/취소/추가/
+    수정/삭제/로그인 etc.), so the change is global by design ("전체적으로" in the request). Deliberately
+    did **not** touch `PixelIconButton` (the `<`/`>`/date-arrow icon buttons) — it uses the blocky
+    `font-pixel` (Press Start 2P) which doesn't have a meaningfully different bold weight and browsers
+    synthetic-bolding a pixel font tends to look blurry/broken, so bolding it would likely look worse, not
+    better.
+
 - Redesigned the daily planner's "오늘의 일정" list and reworked completion tracking end-to-end:
   - **Removed the 세모(triangle) check state** — `EventCheckStatus` is now `"o" | "x"` only (was
     `"o" | "triangle" | "x"`) in `src/types/event.ts`. `supabase/migrations/0006_event_sort_order.sql`
@@ -145,11 +182,15 @@ _Last updated: 2026-07-30_
   5. `supabase/migrations/0005_event_bar_display.sql` (events.display_as_bar column — single-day events
      shown as a calendar bar like a trip)
   6. `supabase/migrations/0006_event_sort_order.sql` (events.sort_order column + nulls out any leftover
-     `'triangle'` check_status — needed for the new drag-to-reorder daily list)
+     `'triangle'` check_status — needed for the drag-to-reorder daily list)
+  7. `supabase/migrations/0007_event_category_rename.sql` (renames existing `category` values to the new
+     5-category set — needed so old events don't end up with a category no longer in `CATEGORY_COLOR_HEX`)
 
-  Until the user runs all pending ones in order, those features will error at the DB layer. **Check this
-  first** if attachments, vocab groups, bar-style events, routine presets, or the O/X checks/reorder look
-  broken next session.
+  Until the user runs all pending ones in order, those features will error at the DB layer (or, for #7
+  specifically, old events just silently fall back to the `general` color via `eventColor()`'s `??` —
+  not a hard error, but worth running anyway for correct colors). **Check this first** if attachments,
+  vocab groups, bar-style events, routine presets, category colors, or the O/X checks/reorder look broken
+  next session.
 - Did **not** build a true WYSIWYG rich-text editor with images embedded at the cursor position inside
   free-flowing memo text. Deliberately scoped down to: a drop-zone over the memo area that uploads images
   as separate resizable cards displayed alongside the memo text (not interleaved within it). This satisfies
@@ -174,6 +215,13 @@ _Last updated: 2026-07-30_
 - Drag-reorder writes `sort_order` as a flat 0..n-1 renumber of *all* currently-loaded day events on every
   drop (simplest correct approach for a small per-day list) rather than a fractional-index insert — fine at
   this scale, would need revisiting if a single day ever has very many events.
+- Font unification (`font-cute` everywhere) and the checkbox restyle were scoped to `EventForm.tsx` only
+  (the "여기" in the request, right next to the two checkbox labels being described) — not applied to
+  `EventDetailModal.tsx`'s view mode, `TodayEventList.tsx`, or other calendar text. Flagging in case the
+  user actually meant the whole calendar/event UI and comes back asking why other spots still look mixed.
+- `PixelButton` bold/bigger-text change is global (intentional per "전체적으로"), but not manually
+  eyeballed in a real browser for any button whose fixed-width/padding might now clip with the larger text
+  — only build/lint checked.
 
 ## Next steps (priority order)
 
@@ -197,6 +245,10 @@ _Last updated: 2026-07-30_
    X → reschedule modal (내일/모레/다음 주 월요일/직접 선택) actually inserts a new event on the picked
    date, drag-and-drop reorder persists after a page refresh, and unchecked/O/X groups sink in the right
    order.
+4c. Once `0007_event_category_rename.sql` is run, verify existing events that were `dday`/`exam` now render
+   with the `important`/`conference` colors (red/yellow) instead of falling back to `general` (sky blue),
+   and spot-check the new `PixelCheckbox` + category-button styling and the chunkier translucent month-bar
+   look in a real browser — this whole styling batch was only build/lint verified, no human eyes on it.
 5. If the user wants true inline (cursor-position) image embedding in memos instead of the current
    below-text resizable-card gallery, that's a scope decision to raise with them before implementing — see
    "Failed / blocked" above.

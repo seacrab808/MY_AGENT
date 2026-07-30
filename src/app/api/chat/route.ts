@@ -40,8 +40,9 @@ const CREATE_EVENT_FUNCTION: FunctionDeclaration = {
       },
       category: {
         type: Type.STRING,
-        enum: ["general", "dday", "exam", "meeting"],
-        description: "general(일반), dday(디데이/마감), exam(시험), meeting(미팅/약속/세미나) 중 하나",
+        enum: ["general", "travel", "important", "meeting", "conference"],
+        description:
+          "general(일반), travel(여행), important(중요 일정/마감), meeting(세미나/회의/약속), conference(학회) 중 하나",
       },
     },
     required: ["title", "event_date"],

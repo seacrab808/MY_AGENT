@@ -94,13 +94,15 @@ window still shows up. `MonthCalendar.tsx` additionally computes per-week-row ba
 (`computeWeekBars`) to render continuous multi-day bars that reset at week boundaries — this is calendar-UI
 logic, not something coming back from the DB.
 
-**Category vs. color are separate concerns.** `EventCategory` (`general | dday | exam | meeting`) drives the
-default duration and the category badge label/color fallback; `PlannerEvent.color` is an optional
-user-picked pastel hex override (`PASTEL_COLOR_PRESETS` in `src/lib/events.ts`) used for calendar
-dots/bars/chips. Anywhere text sits on top of one of these custom-colored chips, use the
-`--pixel-chip-ink` CSS var (`globals.css`), not `--pixel-ink`/`text-pixel-ink` — `--pixel-ink` intentionally
-flips to a light color under `prefers-color-scheme: dark`, which makes it unreadable on a background color
-that doesn't itself change with theme.
+**Color is fully determined by category, never user-picked.** `EventCategory` is
+`general | travel | important | meeting | conference`; `CATEGORY_COLOR_HEX` in `src/lib/events.ts` is the
+single fixed category→hex mapping (하늘색/초록색/빨간색/보라색/노란색 respectively) used everywhere via
+`eventColor()` for calendar dots/bars/chips — there is no per-event color override in the UI anymore.
+`PlannerEvent.color` still exists as a DB column but is dead/unused going forward (kept only so old rows
+don't need a migration); don't read it for rendering. Anywhere text sits on top of one of these
+category-colored chips, use the `--pixel-chip-ink` CSS var (`globals.css`), not `--pixel-ink`/
+`text-pixel-ink` — `--pixel-ink` intentionally flips to a light color under `prefers-color-scheme: dark`,
+which makes it unreadable on a background color that doesn't itself change with theme.
 
 **`EventForm` is a dual-mode create/edit form**, not two components: pass `dateKey`+`visibility` to create,
 or `initialEvent` to edit (calls `updateEvent` instead of `createEvent`). `EventDetailModal` (view/edit

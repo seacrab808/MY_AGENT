@@ -87,37 +87,29 @@ export function filterEventsForTab(
 }
 
 const CATEGORY_LABEL: Record<PlannerEvent["category"], string> = {
-  general: "일정",
-  dday: "디데이",
-  exam: "시험",
-  meeting: "미팅",
+  general: "일반",
+  travel: "여행",
+  important: "중요 일정",
+  meeting: "세미나/회의",
+  conference: "학회",
 };
 
 export function categoryLabel(category: PlannerEvent["category"]): string {
-  return CATEGORY_LABEL[category] ?? "일정";
+  return CATEGORY_LABEL[category] ?? "일반";
 }
 
+// 색은 종류(category)마다 고정. 사용자가 직접 고르지 않음(과거 color 컬럼은 더 이상 사용하지 않음)
 export const CATEGORY_COLOR_HEX: Record<EventCategory, string> = {
-  general: "#8fb4ff",
-  dday: "#ff8a8a",
-  exam: "#d2b8ff",
-  meeting: "#a8ebc9",
+  general: "#8fb4ff", // 하늘색
+  travel: "#8fd19e", // 초록색
+  important: "#ff8a8a", // 빨간색
+  meeting: "#d2b8ff", // 보라색
+  conference: "#ffdb85", // 노란색
 };
 
-export function eventColor(event: Pick<PlannerEvent, "color" | "category">): string {
-  return event.color || CATEGORY_COLOR_HEX[event.category];
+export function eventColor(event: Pick<PlannerEvent, "category">): string {
+  return CATEGORY_COLOR_HEX[event.category] ?? CATEGORY_COLOR_HEX.general;
 }
-
-export const PASTEL_COLOR_PRESETS: { name: string; value: string }[] = [
-  { name: "블루", value: "#8fb4ff" },
-  { name: "핑크", value: "#ffb8d1" },
-  { name: "옐로우", value: "#ffdb85" },
-  { name: "민트", value: "#a8ebc9" },
-  { name: "퍼플", value: "#d2b8ff" },
-  { name: "레드", value: "#ff8a8a" },
-  { name: "피치", value: "#ffd0b3" },
-  { name: "라벤더", value: "#c9c6ff" },
-];
 
 // 종료 시간 미입력 시 기본 duration: 미팅/세미나류는 2시간, 그 외는 1시간
 export function defaultDurationHours(category: EventCategory): number {

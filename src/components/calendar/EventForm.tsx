@@ -1,18 +1,17 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, type CSSProperties } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { createEvent, PASTEL_COLOR_PRESETS, updateEvent } from "@/lib/events";
+import { CATEGORY_COLOR_HEX, categoryLabel, createEvent, updateEvent } from "@/lib/events";
 import type { EventCategory, EventVisibility, PlannerEvent } from "@/types/event";
 import { PixelInput } from "@/components/ui/PixelInput";
 import { PixelButton } from "@/components/ui/PixelButton";
+import { PixelCheckbox } from "@/components/ui/PixelCheckbox";
 
-const CATEGORY_OPTIONS: { value: EventCategory; label: string }[] = [
-  { value: "general", label: "일반" },
-  { value: "meeting", label: "미팅/세미나" },
-  { value: "exam", label: "시험" },
-  { value: "dday", label: "디데이" },
-];
+const CATEGORY_OPTIONS: EventCategory[] = ["general", "travel", "important", "meeting", "conference"];
+
+// PixelInput 등 공용 컴포넌트는 font-body가 기본이라, 이 폼 안에서만 귀여운 손글씨 폰트로 강제 override
+const CUTE_FONT: CSSProperties = { fontFamily: "var(--font-cute)" };
 
 interface EventFormProps {
   userId: string;
@@ -39,7 +38,6 @@ export function EventForm({ userId, onSaved, onCancel, dateKey, visibility, init
   const [time, setTime] = useState(initialEvent?.event_time?.slice(0, 5) ?? "");
   const [endTime, setEndTime] = useState(initialEvent?.end_time?.slice(0, 5) ?? "");
   const [category, setCategory] = useState<EventCategory>(initialEvent?.category ?? "general");
-  const [color, setColor] = useState<string>(initialEvent?.color ?? PASTEL_COLOR_PRESETS[0].value);
   const [displayAsBar, setDisplayAsBar] = useState(Boolean(initialEvent?.display_as_bar));
   const [description, setDescription] = useState(initialEvent?.description ?? "");
   const [submitting, setSubmitting] = useState(false);
@@ -63,7 +61,6 @@ export function EventForm({ userId, onSaved, onCancel, dateKey, visibility, init
       end_time: hasTime && endTime ? endTime : null,
       description: description.trim() || null,
       category,
-      color,
       display_as_bar: isRange ? true : displayAsBar,
     };
 
@@ -85,28 +82,20 @@ export function EventForm({ userId, onSaved, onCancel, dateKey, visibility, init
         placeholder="일정 제목"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
+        style={CUTE_FONT}
         autoFocus
       />
 
-      <label className="flex items-center gap-2 font-body text-sm cursor-pointer">
-        <input type="checkbox" checked={isRange} onChange={(e) => setIsRange(e.target.checked)} />
+      <PixelCheckbox checked={isRange} onChange={setIsRange}>
         여러 날에 걸친 일정이에요 (여행 등)
-      </label>
+      </PixelCheckbox>
 
-      <label
-        className={`flex items-center gap-2 font-body text-sm ${isRange ? "opacity-50" : "cursor-pointer"}`}
-      >
-        <input
-          type="checkbox"
-          checked={isRange || displayAsBar}
-          disabled={isRange}
-          onChange={(e) => setDisplayAsBar(e.target.checked)}
-        />
+      <PixelCheckbox checked={isRange || displayAsBar} disabled={isRange} onChange={setDisplayAsBar}>
         하루짜리여도 캘린더에 바 형태로 표시할게요 (여행처럼)
-      </label>
+      </PixelCheckbox>
       {(isRange || displayAsBar) && (
-        <p className="font-body text-xs text-pixel-ink-soft -mt-2">
-          바 형태 일정은 일일 플래너에서 완료 체크(O/△/X) 없이 그냥 일정으로만 표시돼요.
+        <p className="font-cute text-xs text-pixel-ink-soft -mt-2">
+          바 형태 일정은 일일 플래너에서 완료 체크(O/X) 없이 그냥 일정으로만 표시돼요.
         </p>
       )}
 
@@ -117,6 +106,7 @@ export function EventForm({ userId, onSaved, onCancel, dateKey, visibility, init
           disabled={!isEdit}
           onChange={(e) => setEventDate(e.target.value)}
           className={`flex-1 ${isEdit ? "" : "opacity-70"}`}
+          style={CUTE_FONT}
         />
         {isRange && (
           <>
@@ -127,63 +117,67 @@ export function EventForm({ userId, onSaved, onCancel, dateKey, visibility, init
               min={eventDate}
               onChange={(e) => setEndDate(e.target.value)}
               className="flex-1"
+              style={CUTE_FONT}
             />
           </>
         )}
       </div>
 
-      <label className="flex items-center gap-2 font-body text-sm cursor-pointer">
-        <input type="checkbox" checked={hasTime} onChange={(e) => setHasTime(e.target.checked)} />
+      <PixelCheckbox checked={hasTime} onChange={setHasTime}>
         시간을 지정할게요
-      </label>
+      </PixelCheckbox>
 
       {hasTime && (
         <div className="flex items-center gap-2">
-          <PixelInput type="time" value={time} onChange={(e) => setTime(e.target.value)} className="flex-1" />
+          <PixelInput
+            type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            className="flex-1"
+            style={CUTE_FONT}
+          />
           <span className="font-cute">~</span>
           <PixelInput
             type="time"
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
             className="flex-1"
+            style={CUTE_FONT}
           />
         </div>
       )}
       {hasTime && !endTime && (
-        <p className="font-body text-xs text-pixel-ink-soft -mt-2">
+        <p className="font-cute text-xs text-pixel-ink-soft -mt-2">
           종료 시간을 안 정하면 {category === "meeting" ? "2시간" : "1시간"} 뒤로 자동 설정돼요.
         </p>
       )}
 
       <div className="flex flex-wrap gap-2">
-        {CATEGORY_OPTIONS.map((opt) => (
-          <button
-            type="button"
-            key={opt.value}
-            onClick={() => setCategory(opt.value)}
-            className={`font-body text-sm px-2.5 py-1 rounded-[8px] border-2 border-pixel-border cursor-pointer ${
-              category === opt.value ? "bg-pixel-yellow text-pixel-chip-ink" : "bg-pixel-bg"
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        {PASTEL_COLOR_PRESETS.map((preset) => (
-          <button
-            type="button"
-            key={preset.value}
-            aria-label={preset.name}
-            title={preset.name}
-            onClick={() => setColor(preset.value)}
-            className={`w-7 h-7 rounded-full border-2 cursor-pointer ${
-              color === preset.value ? "border-pixel-border scale-110" : "border-transparent"
-            }`}
-            style={{ backgroundColor: preset.value }}
-          />
-        ))}
+        {CATEGORY_OPTIONS.map((opt) => {
+          const selected = category === opt;
+          return (
+            <button
+              type="button"
+              key={opt}
+              onClick={() => setCategory(opt)}
+              className="font-cute text-base px-3 py-1.5 rounded-full border-2 cursor-pointer transition-transform"
+              style={{
+                borderColor: "var(--pixel-border)",
+                backgroundColor: selected ? CATEGORY_COLOR_HEX[opt] : "var(--pixel-bg)",
+                color: selected ? "var(--pixel-chip-ink)" : "var(--pixel-ink)",
+                transform: selected ? "scale(1.05)" : undefined,
+              }}
+            >
+              {!selected && (
+                <span
+                  className="inline-block w-2.5 h-2.5 rounded-full mr-1.5 align-middle"
+                  style={{ backgroundColor: CATEGORY_COLOR_HEX[opt] }}
+                />
+              )}
+              {categoryLabel(opt)}
+            </button>
+          );
+        })}
       </div>
 
       <textarea
@@ -191,10 +185,11 @@ export function EventForm({ userId, onSaved, onCancel, dateKey, visibility, init
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         rows={2}
-        className="font-body text-sm px-3 py-2 border-[3px] border-pixel-border rounded-[10px] bg-pixel-bg text-pixel-ink placeholder:text-pixel-ink-soft resize-none focus:outline-none focus:ring-2 focus:ring-pixel-blue"
+        style={CUTE_FONT}
+        className="text-base px-3 py-2 border-[3px] border-pixel-border rounded-[10px] bg-pixel-bg text-pixel-ink placeholder:text-pixel-ink-soft resize-none focus:outline-none focus:ring-2 focus:ring-pixel-blue"
       />
 
-      {error && <p className="font-body text-sm text-pixel-red">{error}</p>}
+      {error && <p className="font-cute text-sm text-pixel-red">{error}</p>}
 
       <div className="flex gap-2">
         <PixelButton type="submit" disabled={submitting} className="flex-1">
