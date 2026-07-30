@@ -30,13 +30,13 @@ export function RoutineChecklist({ userId, period, dateKey, label, emoji }: Rout
       .eq("routine_date", dateKey)
       .order("created_at", { ascending: true })
       .then(async ({ data, error }) => {
-        if (!error && data && data.length > 0) {
-          setItems(data as RoutineItem[]);
-          setLoading(false);
-          return;
-        }
+        const existingItems = !error && data ? (data as RoutineItem[]) : [];
+        const existingLabels = new Set(existingItems.map((i) => i.label));
 
-        // 해당 날짜/시간대에 아직 등록된 루틴이 없다면 요일별 프리셋 자동 생성
+        // 그 요일의 프리셋 중 이 날짜에 아직 없는 항목만 채워 넣음. 이 날짜를 처음 보는
+        // 경우(항목 0개)뿐 아니라, 이미 방문했던 날짜라도 그 사이 프리셋에 새로 추가된
+        // 항목이 있으면 다음 방문 시 반영되도록 매번 확인함 (예전엔 최초 1회만 복사해서,
+        // 프리셋 추가 이후 처음 방문하는 날짜에만 새 항목이 보이는 문제가 있었음).
         const dow = parseISO(dateKey).getDay();
         const { data: presetData } = await supabase
           .from("routine_presets")
@@ -45,24 +45,30 @@ export function RoutineChecklist({ userId, period, dateKey, label, emoji }: Rout
           .eq("day_of_week", dow)
           .order("created_at", { ascending: true });
 
-        if (presetData && presetData.length > 0) {
-          const newRows = presetData.map((p) => ({
-            user_id: userId,
-            period,
-            routine_date: dateKey,
-            label: p.label,
-            is_done: false,
-          }));
+        const missingLabels = (presetData ?? [])
+          .map((p) => p.label)
+          .filter((label) => !existingLabels.has(label));
 
-          const { data: insertedData } = await supabase
-            .from("routines")
-            .insert(newRows)
-            .select();
-
-          setItems((insertedData ?? []) as RoutineItem[]);
-        } else {
-          setItems([]);
+        if (missingLabels.length === 0) {
+          setItems(existingItems);
+          setLoading(false);
+          return;
         }
+
+        const newRows = missingLabels.map((label) => ({
+          user_id: userId,
+          period,
+          routine_date: dateKey,
+          label,
+          is_done: false,
+        }));
+
+        const { data: insertedData } = await supabase
+          .from("routines")
+          .insert(newRows)
+          .select();
+
+        setItems([...existingItems, ...((insertedData ?? []) as RoutineItem[])]);
         setLoading(false);
       });
   }, [userId, period, dateKey]);
