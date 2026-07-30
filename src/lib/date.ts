@@ -20,3 +20,4 @@ export function weekDays(date: Date = new Date()) {
 }
 
 export const KOREAN_WEEKDAY = ["일", "월", "화", "수", "목", "금", "토"];
+export const ENGLISH_WEEKDAY = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];

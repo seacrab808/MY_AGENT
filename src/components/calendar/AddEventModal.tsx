@@ -22,7 +22,7 @@ export function AddEventModal({ open, onClose, userId, dateKey, visibility, onCr
         userId={userId}
         dateKey={dateKey}
         visibility={visibility}
-        onCreated={(event) => {
+        onSaved={(event) => {
           onCreated(event);
           onClose();
         }}

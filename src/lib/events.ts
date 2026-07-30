@@ -172,3 +172,71 @@ export async function createEvent(
 
   return { event: data as PlannerEvent, error: null };
 }
+
+export type UpdateEventInput = Partial<
+  Pick<
+    PlannerEvent,
+    | "title"
+    | "event_date"
+    | "event_end_date"
+    | "event_time"
+    | "end_time"
+    | "description"
+    | "category"
+    | "color"
+    | "visibility"
+  >
+>;
+
+export async function updateEvent(
+  supabase: SupabaseClient,
+  id: string,
+  patch: UpdateEventInput,
+): Promise<{ event: PlannerEvent | null; error: string | null }> {
+  const { data, error } = await supabase.from("events").update(patch).eq("id", id).select().single();
+
+  if (error) {
+    console.error(error);
+    return { event: null, error: "일정 수정에 실패했어요." };
+  }
+
+  return { event: data as PlannerEvent, error: null };
+}
+
+export async function deleteEvent(supabase: SupabaseClient, id: string): Promise<string | null> {
+  const { error } = await supabase.from("events").delete().eq("id", id);
+  if (error) {
+    console.error(error);
+    return "일정 삭제에 실패했어요.";
+  }
+  return null;
+}
+
+export async function duplicateEvent(
+  supabase: SupabaseClient,
+  event: PlannerEvent,
+): Promise<{ event: PlannerEvent | null; error: string | null }> {
+  const { data, error } = await supabase
+    .from("events")
+    .insert({
+      user_id: event.user_id,
+      title: event.title,
+      event_date: event.event_date,
+      event_end_date: event.event_end_date,
+      event_time: event.event_time,
+      end_time: event.end_time,
+      description: event.description,
+      category: event.category,
+      color: event.color,
+      visibility: event.visibility,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error(error);
+    return { event: null, error: "일정 복제에 실패했어요." };
+  }
+
+  return { event: data as PlannerEvent, error: null };
+}

@@ -60,7 +60,7 @@ export function VocabQuizTab({ userId }: VocabQuizTabProps) {
           onClick={() => setView("manage")}
           className={`font-cute text-lg px-4 py-2 border-[3px] border-pixel-border rounded-[10px] cursor-pointer transition-transform ${
             view === "manage"
-              ? "bg-gradient-to-b from-[#cdf5e0] to-pixel-mint shadow-[var(--pixel-bevel-active)]"
+              ? "bg-gradient-to-b from-[#cdf5e0] to-pixel-mint shadow-[var(--pixel-bevel-active)] text-pixel-chip-ink"
               : "bg-pixel-panel shadow-[var(--pixel-bevel)] hover:-translate-y-0.5"
           }`}
         >
@@ -70,7 +70,7 @@ export function VocabQuizTab({ userId }: VocabQuizTabProps) {
           onClick={() => setView("quiz")}
           className={`font-cute text-lg px-4 py-2 border-[3px] border-pixel-border rounded-[10px] cursor-pointer transition-transform ${
             view === "quiz"
-              ? "bg-gradient-to-b from-[#e6d8ff] to-pixel-purple shadow-[var(--pixel-bevel-active)]"
+              ? "bg-gradient-to-b from-[#e6d8ff] to-pixel-purple shadow-[var(--pixel-bevel-active)] text-pixel-chip-ink"
               : "bg-pixel-panel shadow-[var(--pixel-bevel)] hover:-translate-y-0.5"
           }`}
         >

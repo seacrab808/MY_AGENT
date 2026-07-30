@@ -30,7 +30,7 @@ export default function LoginPage() {
               onClick={() => setMode("login")}
               className={`flex-1 font-cute text-lg py-1.5 rounded-[8px] border-[3px] border-pixel-border cursor-pointer transition-transform ${
                 mode === "login"
-                  ? "bg-gradient-to-b from-[#b7cfff] to-pixel-blue shadow-[var(--pixel-bevel-active)]"
+                  ? "bg-gradient-to-b from-[#b7cfff] to-pixel-blue shadow-[var(--pixel-bevel-active)] text-pixel-chip-ink"
                   : "bg-pixel-panel shadow-[var(--pixel-bevel)] hover:-translate-y-0.5"
               }`}
             >
@@ -41,7 +41,7 @@ export default function LoginPage() {
               onClick={() => setMode("signup")}
               className={`flex-1 font-cute text-lg py-1.5 rounded-[8px] border-[3px] border-pixel-border cursor-pointer transition-transform ${
                 mode === "signup"
-                  ? "bg-gradient-to-b from-[#ffd6e6] to-pixel-pink shadow-[var(--pixel-bevel-active)]"
+                  ? "bg-gradient-to-b from-[#ffd6e6] to-pixel-pink shadow-[var(--pixel-bevel-active)] text-pixel-chip-ink"
                   : "bg-pixel-panel shadow-[var(--pixel-bevel)] hover:-translate-y-0.5"
               }`}
             >

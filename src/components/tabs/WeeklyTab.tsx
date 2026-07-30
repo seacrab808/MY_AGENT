@@ -11,6 +11,7 @@ import { PixelIconButton } from "@/components/ui/PixelIconButton";
 import { TodoList } from "@/components/todo/TodoList";
 import { GoalList } from "@/components/goal/GoalList";
 import { AddEventModal } from "@/components/calendar/AddEventModal";
+import { EventDetailModal } from "@/components/calendar/EventDetailModal";
 import type { PlannerEvent } from "@/types/event";
 
 interface WeeklyTabProps {
@@ -21,6 +22,7 @@ export function WeeklyTab({ userId }: WeeklyTabProps) {
   const [anchor, setAnchor] = useState(() => new Date());
   const [events, setEvents] = useState<PlannerEvent[]>([]);
   const [addingDateKey, setAddingDateKey] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<PlannerEvent | null>(null);
 
   const days = weekDays(anchor);
   const eventsByDate = groupEventsByDate(events);
@@ -69,14 +71,16 @@ export function WeeklyTab({ userId }: WeeklyTabProps) {
                     <span className="font-body text-xs text-pixel-ink-soft">-</span>
                   )}
                   {dayEvents.map((event) => (
-                    <span
+                    <button
                       key={event.id}
-                      className="inline-block font-pixel text-[10px] leading-none px-2 py-1.5 border-2 border-pixel-border rounded-[6px] w-fit"
+                      type="button"
+                      onClick={() => setSelectedEvent(event)}
+                      className="inline-block font-body text-sm leading-snug px-2 py-1 border-2 border-pixel-border rounded-[6px] w-fit text-left cursor-pointer hover:-translate-y-0.5 transition-transform"
                       style={{ backgroundColor: eventColor(event), color: "var(--pixel-chip-ink)" }}
                     >
                       {event.event_time ? `${event.event_time.slice(0, 5)} ` : ""}
                       {event.title}
-                    </span>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -93,6 +97,24 @@ export function WeeklyTab({ userId }: WeeklyTabProps) {
         visibility="week"
         onCreated={(event) => setEvents((prev) => [...prev, event])}
       />
+
+      {selectedEvent && (
+        <EventDetailModal
+          key={selectedEvent.id}
+          event={selectedEvent}
+          userId={userId}
+          onClose={() => setSelectedEvent(null)}
+          onUpdated={(updated) => {
+            setEvents((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+            setSelectedEvent(updated);
+          }}
+          onDeleted={(id) => {
+            setEvents((prev) => prev.filter((e) => e.id !== id));
+            setSelectedEvent(null);
+          }}
+          onDuplicated={(copy) => setEvents((prev) => [...prev, copy])}
+        />
+      )}
 
       <div className="grid md:grid-cols-2 gap-4">
         <PixelCard>

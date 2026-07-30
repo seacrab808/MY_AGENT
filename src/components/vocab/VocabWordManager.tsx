@@ -56,7 +56,7 @@ export function VocabWordManager({ words, onAdd, onRemove, onToggleDifficult }: 
             <li
               key={word.id}
               className={`flex items-center gap-2 border-2 border-pixel-border rounded-[8px] px-2.5 py-1.5 ${
-                word.is_difficult ? "bg-pixel-yellow" : "bg-pixel-bg"
+                word.is_difficult ? "bg-pixel-yellow text-pixel-chip-ink" : "bg-pixel-bg"
               }`}
             >
               <span className="font-cute text-base shrink-0 max-w-[40%] break-words">{word.term}</span>

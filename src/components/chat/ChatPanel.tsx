@@ -84,7 +84,7 @@ export function ChatPanel({ onEventCreated }: ChatPanelProps) {
             key={m.id}
             className={`font-body text-sm rounded-[10px] px-3 py-2 border-2 border-pixel-border max-w-[85%] whitespace-pre-wrap break-words ${
               m.role === "user"
-                ? "bg-pixel-blue self-end"
+                ? "bg-pixel-blue text-pixel-chip-ink self-end"
                 : "bg-pixel-bg self-start"
             }`}
           >

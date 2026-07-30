@@ -54,7 +54,7 @@ export function VocabQuiz({ words, onToggleDifficult }: VocabQuizProps) {
               onClick={() => setCount(n)}
               className={`font-cute text-lg px-3 py-1.5 border-[3px] border-pixel-border rounded-[8px] cursor-pointer transition-transform ${
                 count === n
-                  ? "bg-gradient-to-b from-[#b7cfff] to-pixel-blue shadow-[var(--pixel-bevel-active)]"
+                  ? "bg-gradient-to-b from-[#b7cfff] to-pixel-blue shadow-[var(--pixel-bevel-active)] text-pixel-chip-ink"
                   : "bg-pixel-panel shadow-[var(--pixel-bevel)] hover:-translate-y-0.5"
               }`}
             >
@@ -65,7 +65,7 @@ export function VocabQuiz({ words, onToggleDifficult }: VocabQuizProps) {
             onClick={() => setCount(words.length)}
             className={`font-cute text-lg px-3 py-1.5 border-[3px] border-pixel-border rounded-[8px] cursor-pointer transition-transform ${
               count === words.length
-                ? "bg-gradient-to-b from-[#b7cfff] to-pixel-blue shadow-[var(--pixel-bevel-active)]"
+                ? "bg-gradient-to-b from-[#b7cfff] to-pixel-blue shadow-[var(--pixel-bevel-active)] text-pixel-chip-ink"
                 : "bg-pixel-panel shadow-[var(--pixel-bevel)] hover:-translate-y-0.5"
             }`}
           >

@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { createEvent, PASTEL_COLOR_PRESETS } from "@/lib/events";
+import { createEvent, PASTEL_COLOR_PRESETS, updateEvent } from "@/lib/events";
 import type { EventCategory, EventVisibility, PlannerEvent } from "@/types/event";
 import { PixelInput } from "@/components/ui/PixelInput";
 import { PixelButton } from "@/components/ui/PixelButton";
@@ -16,22 +16,31 @@ const CATEGORY_OPTIONS: { value: EventCategory; label: string }[] = [
 
 interface EventFormProps {
   userId: string;
-  dateKey: string; // 시작일 (고정)
-  visibility: EventVisibility;
-  onCreated: (event: PlannerEvent) => void;
+  onSaved: (event: PlannerEvent) => void;
   onCancel?: () => void;
+  // 새 일정 등록 모드
+  dateKey?: string; // 시작일 (고정)
+  visibility?: EventVisibility;
+  // 기존 일정 수정 모드
+  initialEvent?: PlannerEvent;
 }
 
-export function EventForm({ userId, dateKey, visibility, onCreated, onCancel }: EventFormProps) {
-  const [title, setTitle] = useState("");
-  const [isRange, setIsRange] = useState(false);
-  const [endDate, setEndDate] = useState(dateKey);
-  const [hasTime, setHasTime] = useState(false);
-  const [time, setTime] = useState("");
-  const [endTime, setEndTime] = useState("");
-  const [category, setCategory] = useState<EventCategory>("general");
-  const [color, setColor] = useState<string>(PASTEL_COLOR_PRESETS[0].value);
-  const [description, setDescription] = useState("");
+export function EventForm({ userId, onSaved, onCancel, dateKey, visibility, initialEvent }: EventFormProps) {
+  const isEdit = Boolean(initialEvent);
+  const startDate = initialEvent?.event_date ?? dateKey ?? "";
+
+  const [title, setTitle] = useState(initialEvent?.title ?? "");
+  const [eventDate, setEventDate] = useState(startDate);
+  const [isRange, setIsRange] = useState(
+    Boolean(initialEvent?.event_end_date && initialEvent.event_end_date !== initialEvent.event_date),
+  );
+  const [endDate, setEndDate] = useState(initialEvent?.event_end_date ?? startDate);
+  const [hasTime, setHasTime] = useState(Boolean(initialEvent?.event_time));
+  const [time, setTime] = useState(initialEvent?.event_time?.slice(0, 5) ?? "");
+  const [endTime, setEndTime] = useState(initialEvent?.end_time?.slice(0, 5) ?? "");
+  const [category, setCategory] = useState<EventCategory>(initialEvent?.category ?? "general");
+  const [color, setColor] = useState<string>(initialEvent?.color ?? PASTEL_COLOR_PRESETS[0].value);
+  const [description, setDescription] = useState(initialEvent?.description ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,25 +54,27 @@ export function EventForm({ userId, dateKey, visibility, onCreated, onCancel }: 
     setError(null);
 
     const supabase = createClient();
-    const { event, error: err } = await createEvent(supabase, {
-      user_id: userId,
+    const fields = {
       title: title.trim(),
-      event_date: dateKey,
-      event_end_date: isRange && endDate > dateKey ? endDate : null,
+      event_date: eventDate,
+      event_end_date: isRange && endDate > eventDate ? endDate : null,
       event_time: hasTime && time ? time : null,
       end_time: hasTime && endTime ? endTime : null,
       description: description.trim() || null,
       category,
       color,
-      visibility,
-    });
+    };
+
+    const { event, error: err } = isEdit
+      ? await updateEvent(supabase, initialEvent!.id, fields)
+      : await createEvent(supabase, { ...fields, user_id: userId, visibility: visibility! });
 
     setSubmitting(false);
     if (err || !event) {
       setError(err ?? "일정 저장에 실패했어요.");
       return;
     }
-    onCreated(event);
+    onSaved(event);
   }
 
   return (
@@ -81,14 +92,20 @@ export function EventForm({ userId, dateKey, visibility, onCreated, onCancel }: 
       </label>
 
       <div className="flex items-center gap-2">
-        <PixelInput type="date" value={dateKey} disabled className="flex-1 opacity-70" />
+        <PixelInput
+          type="date"
+          value={eventDate}
+          disabled={!isEdit}
+          onChange={(e) => setEventDate(e.target.value)}
+          className={`flex-1 ${isEdit ? "" : "opacity-70"}`}
+        />
         {isRange && (
           <>
             <span className="font-cute">~</span>
             <PixelInput
               type="date"
               value={endDate}
-              min={dateKey}
+              min={eventDate}
               onChange={(e) => setEndDate(e.target.value)}
               className="flex-1"
             />
@@ -126,7 +143,7 @@ export function EventForm({ userId, dateKey, visibility, onCreated, onCancel }: 
             key={opt.value}
             onClick={() => setCategory(opt.value)}
             className={`font-body text-sm px-2.5 py-1 rounded-[8px] border-2 border-pixel-border cursor-pointer ${
-              category === opt.value ? "bg-pixel-yellow" : "bg-pixel-bg"
+              category === opt.value ? "bg-pixel-yellow text-pixel-chip-ink" : "bg-pixel-bg"
             }`}
           >
             {opt.label}
@@ -162,7 +179,7 @@ export function EventForm({ userId, dateKey, visibility, onCreated, onCancel }: 
 
       <div className="flex gap-2">
         <PixelButton type="submit" disabled={submitting} className="flex-1">
-          {submitting ? "저장 중..." : "일정 등록"}
+          {submitting ? "저장 중..." : isEdit ? "수정 완료" : "일정 등록"}
         </PixelButton>
         {onCancel && (
           <PixelButton type="button" tone="ink" onClick={onCancel}>

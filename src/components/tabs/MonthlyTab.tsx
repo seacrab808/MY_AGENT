@@ -16,6 +16,9 @@ interface MonthlyTabProps {
   selectedDateKey: string | null;
   onSelectDate: (dateKey: string | null) => void;
   onEventCreated: (event: PlannerEvent) => void;
+  onEventUpdated: (event: PlannerEvent) => void;
+  onEventDeleted: (eventId: string) => void;
+  onEventDuplicated: (event: PlannerEvent) => void;
 }
 
 export function MonthlyTab({
@@ -27,6 +30,9 @@ export function MonthlyTab({
   selectedDateKey,
   onSelectDate,
   onEventCreated,
+  onEventUpdated,
+  onEventDeleted,
+  onEventDuplicated,
 }: MonthlyTabProps) {
   return (
     <div className="grid lg:grid-cols-[1.4fr_1fr] gap-4 items-start">
@@ -46,8 +52,11 @@ export function MonthlyTab({
         dateKey={selectedDateKey}
         events={selectedDateKey ? eventsByDate[selectedDateKey] ?? [] : []}
         onClose={() => onSelectDate(null)}
-        onEventCreated={onEventCreated}
         userId={userId}
+        onEventCreated={onEventCreated}
+        onEventUpdated={onEventUpdated}
+        onEventDeleted={onEventDeleted}
+        onEventDuplicated={onEventDuplicated}
       />
     </div>
   );

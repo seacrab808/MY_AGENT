@@ -5,11 +5,11 @@ import { ButtonHTMLAttributes } from "react";
 type Tone = "yellow" | "red" | "blue" | "ink" | "panel";
 
 const toneClasses: Record<Tone, string> = {
-  yellow: "bg-gradient-to-b from-[#ffedb0] to-pixel-yellow",
-  red: "bg-gradient-to-b from-[#ffb3b3] to-pixel-red text-pixel-bg",
-  blue: "bg-gradient-to-b from-[#b7cfff] to-pixel-blue",
+  yellow: "bg-gradient-to-b from-[#ffedb0] to-pixel-yellow text-pixel-chip-ink",
+  red: "bg-gradient-to-b from-[#ffb3b3] to-pixel-red text-pixel-chip-ink",
+  blue: "bg-gradient-to-b from-[#b7cfff] to-pixel-blue text-pixel-chip-ink",
   ink: "bg-gradient-to-b from-[#4a4f82] to-pixel-ink text-pixel-bg",
-  panel: "bg-pixel-panel",
+  panel: "bg-pixel-panel text-pixel-ink",
 };
 
 interface PixelIconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

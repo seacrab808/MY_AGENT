@@ -70,6 +70,16 @@ export function Dashboard({ userId, userEmail, initialEvents, initialMonth }: Da
     }
   }
 
+  function handleEventUpdated(event: PlannerEvent) {
+    setEvents((prev) => prev.map((e) => (e.id === event.id ? event : e)));
+    setWeekEvents((prev) => prev.map((e) => (e.id === event.id ? event : e)));
+  }
+
+  function handleEventDeleted(eventId: string) {
+    setEvents((prev) => prev.filter((e) => e.id !== eventId));
+    setWeekEvents((prev) => prev.filter((e) => e.id !== eventId));
+  }
+
   return (
     <div className="flex flex-col flex-1 max-w-7xl w-full mx-auto p-4 gap-4">
       <HeroBanner
@@ -103,6 +113,9 @@ export function Dashboard({ userId, userEmail, initialEvents, initialMonth }: Da
               selectedDateKey={selectedDateKey}
               onSelectDate={setSelectedDateKey}
               onEventCreated={handleEventCreated}
+              onEventUpdated={handleEventUpdated}
+              onEventDeleted={handleEventDeleted}
+              onEventDuplicated={handleEventCreated}
             />
           )}
           {activeTab === "chat" && <ChatTab onEventCreated={handleEventCreated} />}

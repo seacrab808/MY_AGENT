@@ -3,12 +3,12 @@ import { HTMLAttributes, ReactNode } from "react";
 type Tone = "blue" | "pink" | "yellow" | "mint" | "purple" | "red";
 
 const titleBarTone: Record<Tone, string> = {
-  blue: "bg-pixel-blue",
-  pink: "bg-pixel-pink",
-  yellow: "bg-pixel-yellow",
-  mint: "bg-pixel-mint",
-  purple: "bg-pixel-purple",
-  red: "bg-pixel-red",
+  blue: "bg-pixel-blue text-pixel-chip-ink",
+  pink: "bg-pixel-pink text-pixel-chip-ink",
+  yellow: "bg-pixel-yellow text-pixel-chip-ink",
+  mint: "bg-pixel-mint text-pixel-chip-ink",
+  purple: "bg-pixel-purple text-pixel-chip-ink",
+  red: "bg-pixel-red text-pixel-chip-ink",
 };
 
 interface PixelCardProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {

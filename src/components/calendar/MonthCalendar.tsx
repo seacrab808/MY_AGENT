@@ -147,12 +147,12 @@ export function MonthCalendar({ monthDate, onMonthChange, events, onSelectDate }
                     <button
                       key={dateKey}
                       onClick={() => onSelectDate(dateKey)}
-                      className={`min-h-[72px] sm:min-h-[86px] flex flex-col items-center justify-start p-1 rounded-[8px] border-2 cursor-pointer transition-transform ${
+                      className={`min-h-[76px] sm:min-h-[92px] flex flex-col items-center justify-start p-1 rounded-[8px] border-2 cursor-pointer transition-transform ${
                         todayFlag
-                          ? "border-pixel-border bg-gradient-to-b from-[#ffedb0] to-pixel-yellow shadow-[var(--pixel-bevel)]"
+                          ? "border-pixel-border bg-gradient-to-b from-[#ffedb0] to-pixel-yellow shadow-[var(--pixel-bevel)] text-pixel-chip-ink"
                           : "border-transparent hover:border-pixel-border hover:-translate-y-0.5"
                       } ${!inMonth ? "opacity-35" : ""}`}
-                      style={{ paddingBottom: laneCount * 15 + 4 }}
+                      style={{ paddingBottom: laneCount * 20 + 4 }}
                     >
                       <span className="font-cute text-base leading-none mt-1">{format(day, "d")}</span>
                       <div className="flex gap-0.5 mt-1 flex-wrap justify-center">
@@ -172,13 +172,13 @@ export function MonthCalendar({ monthDate, onMonthChange, events, onSelectDate }
               {bars.length > 0 && (
                 <div
                   className="absolute left-0 right-0 grid grid-cols-7 gap-x-1"
-                  style={{ top: 26, gridAutoRows: 13, rowGap: 2 }}
+                  style={{ top: 26, gridAutoRows: 18, rowGap: 2 }}
                 >
                   {bars.map((seg) => (
                     <div
                       key={`${seg.event.id}-${seg.startCol}`}
                       title={seg.event.title}
-                      className={`flex items-center px-1 text-[10px] font-cute leading-none truncate border-y-2 border-pixel-border ${
+                      className={`flex items-center px-1 text-xs sm:text-sm font-body font-medium leading-none truncate border-y-2 border-pixel-border ${
                         seg.roundedLeft ? "rounded-l-[6px] border-l-2" : "-ml-1"
                       } ${seg.roundedRight ? "rounded-r-[6px] border-r-2" : "-mr-1"}`}
                       style={{

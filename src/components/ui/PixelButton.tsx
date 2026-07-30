@@ -5,12 +5,12 @@ import { ButtonHTMLAttributes } from "react";
 type Tone = "blue" | "pink" | "yellow" | "mint" | "purple" | "ink" | "red";
 
 const toneClasses: Record<Tone, string> = {
-  blue: "bg-gradient-to-b from-[#b7cfff] to-pixel-blue text-pixel-ink",
-  pink: "bg-gradient-to-b from-[#ffd6e6] to-pixel-pink text-pixel-ink",
-  yellow: "bg-gradient-to-b from-[#ffedb0] to-pixel-yellow text-pixel-ink",
-  mint: "bg-gradient-to-b from-[#cdf5e0] to-pixel-mint text-pixel-ink",
-  purple: "bg-gradient-to-b from-[#e6d8ff] to-pixel-purple text-pixel-ink",
-  red: "bg-gradient-to-b from-[#ffb3b3] to-pixel-red text-pixel-ink",
+  blue: "bg-gradient-to-b from-[#b7cfff] to-pixel-blue text-pixel-chip-ink",
+  pink: "bg-gradient-to-b from-[#ffd6e6] to-pixel-pink text-pixel-chip-ink",
+  yellow: "bg-gradient-to-b from-[#ffedb0] to-pixel-yellow text-pixel-chip-ink",
+  mint: "bg-gradient-to-b from-[#cdf5e0] to-pixel-mint text-pixel-chip-ink",
+  purple: "bg-gradient-to-b from-[#e6d8ff] to-pixel-purple text-pixel-chip-ink",
+  red: "bg-gradient-to-b from-[#ffb3b3] to-pixel-red text-pixel-chip-ink",
   ink: "bg-gradient-to-b from-[#4a4f82] to-pixel-ink text-pixel-bg",
 };
 

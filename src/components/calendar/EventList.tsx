@@ -1,7 +1,12 @@
 import type { PlannerEvent } from "@/types/event";
 import { categoryLabel, eventColor } from "@/lib/events";
 
-export function EventList({ events }: { events: PlannerEvent[] }) {
+interface EventListProps {
+  events: PlannerEvent[];
+  onSelect?: (event: PlannerEvent) => void;
+}
+
+export function EventList({ events, onSelect }: EventListProps) {
   if (events.length === 0) {
     return <p className="font-body text-pixel-ink-soft text-sm py-3">등록된 일정이 없어요.</p>;
   }
@@ -15,11 +20,8 @@ export function EventList({ events }: { events: PlannerEvent[] }) {
           ? `${event.event_time.slice(0, 5)}${event.end_time ? ` ~ ${event.end_time.slice(0, 5)}` : ""}`
           : "";
 
-        return (
-          <li
-            key={event.id}
-            className="flex items-start gap-2 border-2 border-pixel-border rounded-[10px] p-2.5 bg-pixel-bg"
-          >
+        const content = (
+          <>
             <span
               className="inline-block font-pixel text-[10px] leading-none px-2 py-1.5 border-2 border-pixel-border rounded-[6px] shrink-0"
               style={{ backgroundColor: eventColor(event), color: "var(--pixel-chip-ink)" }}
@@ -38,6 +40,24 @@ export function EventList({ events }: { events: PlannerEvent[] }) {
                 </p>
               )}
             </div>
+          </>
+        );
+
+        return (
+          <li key={event.id}>
+            {onSelect ? (
+              <button
+                type="button"
+                onClick={() => onSelect(event)}
+                className="w-full flex items-start gap-2 border-2 border-pixel-border rounded-[10px] p-2.5 bg-pixel-bg text-left cursor-pointer hover:-translate-y-0.5 transition-transform"
+              >
+                {content}
+              </button>
+            ) : (
+              <div className="flex items-start gap-2 border-2 border-pixel-border rounded-[10px] p-2.5 bg-pixel-bg">
+                {content}
+              </div>
+            )}
           </li>
         );
       })}

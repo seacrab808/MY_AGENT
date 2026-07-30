@@ -19,7 +19,7 @@ export function Sidebar({ active, onChange }: SidebarProps) {
               onClick={() => onChange(tab.key)}
               className={`flex items-center gap-2.5 font-cute text-lg pl-2 pr-3 py-2 border-[3px] border-pixel-border rounded-[10px] whitespace-nowrap shrink-0 cursor-pointer transition-transform ${
                 isActive
-                  ? "bg-gradient-to-b from-[#b7cfff] to-pixel-blue shadow-[var(--pixel-bevel-active)] translate-x-[1px] translate-y-[1px]"
+                  ? "bg-gradient-to-b from-[#b7cfff] to-pixel-blue shadow-[var(--pixel-bevel-active)] translate-x-[1px] translate-y-[1px] text-pixel-chip-ink"
                   : "bg-pixel-panel shadow-[var(--pixel-bevel)] hover:-translate-y-0.5"
               }`}
             >

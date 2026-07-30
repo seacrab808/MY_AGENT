@@ -22,16 +22,16 @@ export function FlipCard({ word, onToggleDifficult }: FlipCardProps) {
         }`}
       >
         <div
-          className={`absolute inset-0 [backface-visibility:hidden] border-[3px] border-pixel-border rounded-[14px] flex items-center justify-center p-3 text-center shadow-[var(--pixel-bevel)] ${
+          className={`absolute inset-0 [backface-visibility:hidden] border-[3px] border-pixel-border rounded-[14px] flex items-center justify-center p-3 text-center shadow-[var(--pixel-bevel)] text-pixel-chip-ink ${
             word.is_difficult
               ? "bg-gradient-to-b from-[#ffedb0] to-pixel-yellow"
-              : "bg-gradient-to-b from-white to-pixel-panel"
+              : "bg-gradient-to-b from-white to-pixel-panel text-pixel-chip-ink"
           }`}
         >
           <p className="font-cute text-xl break-words">{word.term}</p>
         </div>
 
-        <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] border-[3px] border-pixel-border rounded-[14px] flex items-center justify-center p-3 text-center bg-gradient-to-b from-[#cdf5e0] to-pixel-mint shadow-[var(--pixel-bevel)]">
+        <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] border-[3px] border-pixel-border rounded-[14px] flex items-center justify-center p-3 text-center bg-gradient-to-b from-[#cdf5e0] to-pixel-mint shadow-[var(--pixel-bevel)] text-pixel-chip-ink">
           <p className="font-body text-base break-words">{word.meaning}</p>
         </div>
       </div>
