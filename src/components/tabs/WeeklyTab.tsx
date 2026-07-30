@@ -35,6 +35,11 @@ export function WeeklyTab({ userId }: WeeklyTabProps) {
 
   return (
     <div className="flex flex-col gap-4">
+      <div>
+        <h1 className="font-cute text-3xl font-bold">주간 캘린더</h1>
+        <p className="font-body text-sm text-pixel-ink-soft">🗓️ 이번 주를 한눈에 확인해요</p>
+      </div>
+
       <PixelCard>
         <div className="flex items-center justify-between mb-3">
           <PixelIconButton onClick={() => setAnchor((d) => subWeeks(d, 1))}>{"<"}</PixelIconButton>

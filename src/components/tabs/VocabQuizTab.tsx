@@ -90,6 +90,11 @@ export function VocabQuizTab({ userId }: VocabQuizTabProps) {
 
   return (
     <div className="flex flex-col gap-4">
+      <div>
+        <h1 className="font-cute text-3xl font-bold">단어 카드 퀴즈</h1>
+        <p className="font-body text-sm text-pixel-ink-soft">🃏 단어를 채워 넣고 퀴즈로 복습해요</p>
+      </div>
+
       <div className="flex gap-2">
         <button
           onClick={() => setView("manage")}

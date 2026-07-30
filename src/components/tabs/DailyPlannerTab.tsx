@@ -10,7 +10,7 @@ import {
   rescheduleEvent,
   setEventCheckStatus,
 } from "@/lib/events";
-import { toDateKey, ENGLISH_WEEKDAY } from "@/lib/date";
+import { toDateKey, ENGLISH_WEEKDAY_FULL } from "@/lib/date";
 import { PixelCard } from "@/components/ui/PixelCard";
 import { PixelIconButton } from "@/components/ui/PixelIconButton";
 import { PixelButton } from "@/components/ui/PixelButton";
@@ -84,7 +84,7 @@ export function DailyPlannerTab({ userId }: DailyPlannerTabProps) {
             onClick={() => setPickingDate(true)}
             className="font-cute text-lg sm:text-2xl break-words cursor-pointer hover:underline"
           >
-            {format(date, "yyyy년 M월 d일")} {ENGLISH_WEEKDAY[date.getDay()]}
+            {format(date, "yyyy년 M월 d일")} {ENGLISH_WEEKDAY_FULL[date.getDay()]}
           </button>
           {!isToday(date) && (
             <button

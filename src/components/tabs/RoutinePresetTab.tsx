@@ -85,6 +85,11 @@ export function RoutinePresetTab({ userId }: RoutinePresetTabProps) {
 
   return (
     <div className="flex flex-col gap-4">
+      <div>
+        <h1 className="font-cute text-3xl font-bold">하루 루틴</h1>
+        <p className="font-body text-sm text-pixel-ink-soft">🔄 요일마다 반복할 루틴을 미리 등록해요</p>
+      </div>
+
       <PixelCard>
         <h2 className="font-cute text-2xl mb-1">🔄 요일별 하루 루틴 설정</h2>
         <p className="font-body text-sm text-pixel-ink-soft mb-4">

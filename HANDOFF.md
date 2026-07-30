@@ -7,6 +7,36 @@ _Last updated: 2026-07-30_
 
 ## Tried
 
+- **Applied the Monthly/Daily tabs' "page title" header to every other tab**, and made the daily planner's
+  date row use full weekday names:
+  - `MonthlyTab.tsx`/`DailyPlannerTab.tsx` already had a standalone (not-in-a-card) header block —
+    `<h1 className="font-cute text-3xl font-bold">{제목}</h1>` + `<p className="font-body text-sm
+    text-pixel-ink-soft">{emoji} {부제}</p>` — above their content. Per request, ported this exact pattern
+    (same classes) to the top of `WeeklyTab.tsx` ("주간 캘린더"), `GoalsTab.tsx` ("분기 · 연도 목표",
+    also had to fix indentation/wrap the existing 2-card grid in an outer `flex flex-col gap-4` so the new
+    header and the grid are siblings, not the header living inside the grid), `RoutinePresetTab.tsx`
+    ("하루 루틴"), `VocabQuizTab.tsx` ("단어 카드 퀴즈"), and `ChatTab.tsx` ("채팅창" — this one's wrapper
+    div is the thing `Dashboard.tsx` toggles `hidden` on for the always-mounted-chat trick, so the new header
+    hides/shows correctly with the rest of the tab, not independently). `AccountTab.tsx`'s old
+    `<PixelCard><h2>👤 내 계정</h2><p>{email}</p></PixelCard>` intro block was replaced with the same
+    standalone `h1`/`p` pattern (email now sits in the subtitle line next to a 👤 emoji, dropped the
+    surrounding card since none of the other tabs wrap their title in one either). Explicitly **left
+    `DailyPlannerTab.tsx` alone** per the request ("오늘의 플래너는 없어도 되고") — it already had this
+    header from an earlier round.
+  - **Daily planner's date title now shows the full English weekday name** ("THURSDAY" instead of "THU").
+    New `ENGLISH_WEEKDAY_FULL` array in `src/lib/date.ts` (parallel to the existing abbreviated
+    `ENGLISH_WEEKDAY`, which is still used elsewhere e.g. `TodayEventList`/`WeeklyTab` — deliberately left
+    those alone, only swapped the import in `DailyPlannerTab.tsx` itself). The date+weekday text was already
+    centered before this change (the header is a 3-column grid — `<`/title/`>` — with equal-width icon
+    buttons on both sides, so the middle column, and the `text-center` text inside it, sits centered on the
+    whole card regardless of the label's length) — no layout change was needed for the centering ask itself,
+    just confirmed it still holds with the now-longer "THURSDAY" text (button is inline-block, so `text-center`
+    on its wrapping div was already sufficient; it can still wrap to 2 lines on very narow screens via the
+    existing `break-words`, but stays centered either way).
+  - `npx tsc --noEmit`, `npm run lint`, `npm run build` all pass clean. Not manually browser-tested (each
+    new header's spacing/emoji choice, and the full weekday name not overflowing/breaking awkwardly on a
+    narrow phone width) — build/lint-checked only.
+
 - **GitHub 잔디 grid now stretches to fill the card's full width**, instead of staying a fixed 11px-per-cell
   size and leaving empty space on a wide card. `GithubContributionsCard.tsx`'s week-label row and day-grid
   both switched from a `flex`/`inline-flex` layout with hardcoded `w-[11px] h-[11px]` cells to a CSS `grid`

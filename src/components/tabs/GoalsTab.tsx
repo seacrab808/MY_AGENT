@@ -38,42 +38,49 @@ export function GoalsTab({ userId }: GoalsTabProps) {
   const yKey = yearKey(yearAnchor);
 
   return (
-    <div className="grid lg:grid-cols-2 gap-4 items-start">
-      <PixelCard>
-        <NavHeader
-          title={`${quarterLabel(quarterAnchor)} 목표`}
-          onPrev={() => setQuarterAnchor((d) => shiftQuarter(d, -1))}
-          onNext={() => setQuarterAnchor((d) => shiftQuarter(d, 1))}
-        />
-        <div className="flex flex-col gap-4">
-          <div>
-            <h3 className="font-cute text-lg mb-1">🎯 분기 목표</h3>
-            <GoalList userId={userId} scope="quarter" periodKey={qKey} />
-          </div>
-          <div>
-            <h3 className="font-cute text-lg mb-1">📝 분기 TODO</h3>
-            <TodoList userId={userId} scope="quarter" periodKey={qKey} />
-          </div>
-        </div>
-      </PixelCard>
+    <div className="flex flex-col gap-4">
+      <div>
+        <h1 className="font-cute text-3xl font-bold">분기 · 연도 목표</h1>
+        <p className="font-body text-sm text-pixel-ink-soft">🎯 분기와 1년의 큰 목표를 챙겨요</p>
+      </div>
 
-      <PixelCard>
-        <NavHeader
-          title={`${yKey}년 목표`}
-          onPrev={() => setYearAnchor((d) => subYears(d, 1))}
-          onNext={() => setYearAnchor((d) => addYears(d, 1))}
-        />
-        <div className="flex flex-col gap-4">
-          <div>
-            <h3 className="font-cute text-lg mb-1">🎯 연간 목표</h3>
-            <GoalList userId={userId} scope="year" periodKey={yKey} />
+      <div className="grid lg:grid-cols-2 gap-4 items-start">
+        <PixelCard>
+          <NavHeader
+            title={`${quarterLabel(quarterAnchor)} 목표`}
+            onPrev={() => setQuarterAnchor((d) => shiftQuarter(d, -1))}
+            onNext={() => setQuarterAnchor((d) => shiftQuarter(d, 1))}
+          />
+          <div className="flex flex-col gap-4">
+            <div>
+              <h3 className="font-cute text-lg mb-1">🎯 분기 목표</h3>
+              <GoalList userId={userId} scope="quarter" periodKey={qKey} />
+            </div>
+            <div>
+              <h3 className="font-cute text-lg mb-1">📝 분기 TODO</h3>
+              <TodoList userId={userId} scope="quarter" periodKey={qKey} />
+            </div>
           </div>
-          <div>
-            <h3 className="font-cute text-lg mb-1">📝 연간 TODO</h3>
-            <TodoList userId={userId} scope="year" periodKey={yKey} />
+        </PixelCard>
+
+        <PixelCard>
+          <NavHeader
+            title={`${yKey}년 목표`}
+            onPrev={() => setYearAnchor((d) => subYears(d, 1))}
+            onNext={() => setYearAnchor((d) => addYears(d, 1))}
+          />
+          <div className="flex flex-col gap-4">
+            <div>
+              <h3 className="font-cute text-lg mb-1">🎯 연간 목표</h3>
+              <GoalList userId={userId} scope="year" periodKey={yKey} />
+            </div>
+            <div>
+              <h3 className="font-cute text-lg mb-1">📝 연간 TODO</h3>
+              <TodoList userId={userId} scope="year" periodKey={yKey} />
+            </div>
           </div>
-        </div>
-      </PixelCard>
+        </PixelCard>
+      </div>
     </div>
   );
 }

@@ -282,10 +282,10 @@ function GithubSettingsCard({ userId }: { userId: string }) {
 export function AccountTab({ userId, userEmail, displayName, onDisplayNameChange }: AccountTabProps) {
   return (
     <div className="max-w-lg flex flex-col gap-4">
-      <PixelCard>
-        <h2 className="font-cute text-2xl mb-1">👤 내 계정</h2>
-        <p className="font-body text-sm text-pixel-ink-soft">{userEmail}</p>
-      </PixelCard>
+      <div>
+        <h1 className="font-cute text-3xl font-bold">내 계정</h1>
+        <p className="font-body text-sm text-pixel-ink-soft">👤 {userEmail}</p>
+      </div>
 
       <DisplayNameCard displayName={displayName} onDisplayNameChange={onDisplayNameChange} />
       <PasswordChangeCard userEmail={userEmail} />
