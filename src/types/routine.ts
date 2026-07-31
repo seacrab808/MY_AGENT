@@ -7,6 +7,7 @@ export interface RoutineItem {
   label: string;
   routine_date: string;
   is_done: boolean;
+  completed_at: string | null;
   created_at: string;
 }
 

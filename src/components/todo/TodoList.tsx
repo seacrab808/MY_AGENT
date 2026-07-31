@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Todo, TodoScope } from "@/types/todo";
+import { sortByCompletion } from "@/lib/checklist";
 import { PixelInput } from "@/components/ui/PixelInput";
 import { PixelButton } from "@/components/ui/PixelButton";
 import { PixelCheckbox } from "@/components/ui/PixelCheckbox";
@@ -55,11 +56,13 @@ export function TodoList({ userId, scope, periodKey, emptyLabel, showProgress = 
   }
 
   async function toggleDone(todo: Todo) {
+    const nextDone = !todo.is_done;
+    const completedAt = nextDone ? new Date().toISOString() : null;
     setTodos((prev) =>
-      prev.map((t) => (t.id === todo.id ? { ...t, is_done: !t.is_done } : t)),
+      prev.map((t) => (t.id === todo.id ? { ...t, is_done: nextDone, completed_at: completedAt } : t)),
     );
     const supabase = createClient();
-    await supabase.from("todos").update({ is_done: !todo.is_done }).eq("id", todo.id);
+    await supabase.from("todos").update({ is_done: nextDone, completed_at: completedAt }).eq("id", todo.id);
   }
 
   async function remove(todo: Todo) {
@@ -69,6 +72,7 @@ export function TodoList({ userId, scope, periodKey, emptyLabel, showProgress = 
   }
 
   const doneCount = todos.filter((t) => t.is_done).length;
+  const sortedTodos = sortByCompletion(todos);
 
   return (
     <div className="flex flex-col gap-2">
@@ -94,7 +98,7 @@ export function TodoList({ userId, scope, periodKey, emptyLabel, showProgress = 
         </p>
       ) : (
         <ul className="flex flex-col gap-1.5">
-          {todos.map((todo) => (
+          {sortedTodos.map((todo) => (
             <li
               key={todo.id}
               className="flex items-center gap-2 border-2 border-pixel-border rounded-[10px] px-2.5 py-1.5 bg-pixel-bg"

@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { parseISO } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import type { RoutineItem, RoutinePeriod } from "@/types/routine";
+import { sortByCompletion } from "@/lib/checklist";
 import { PixelInput } from "@/components/ui/PixelInput";
 import { PixelButton } from "@/components/ui/PixelButton";
 import { PixelCheckbox } from "@/components/ui/PixelCheckbox";
@@ -99,9 +100,16 @@ export function TodayRoutineList({ userId, dateKey }: TodayRoutineListProps) {
   }
 
   async function toggle(item: RoutineItem) {
-    setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, is_done: !i.is_done } : i)));
+    const nextDone = !item.is_done;
+    const completedAt = nextDone ? new Date().toISOString() : null;
+    setItems((prev) =>
+      prev.map((i) => (i.id === item.id ? { ...i, is_done: nextDone, completed_at: completedAt } : i)),
+    );
     const supabase = createClient();
-    await supabase.from("routines").update({ is_done: !item.is_done }).eq("id", item.id);
+    await supabase
+      .from("routines")
+      .update({ is_done: nextDone, completed_at: completedAt })
+      .eq("id", item.id);
   }
 
   async function remove(item: RoutineItem) {
@@ -110,7 +118,9 @@ export function TodayRoutineList({ userId, dateKey }: TodayRoutineListProps) {
     await supabase.from("routines").delete().eq("id", item.id);
   }
 
-  const sorted = [...items].sort((a, b) => {
+  // 체크한 항목은 시간대 구분 없이 체크한 순서대로 맨 위에 모으고, 아직 안 한 항목만 기존처럼
+  // 오전 → 오후 → 저녁 순으로 그 아래에 묶어서 보여줌.
+  const sorted = sortByCompletion(items, (a, b) => {
     const rankDiff = periodRank(a.period) - periodRank(b.period);
     if (rankDiff !== 0) return rankDiff;
     return a.created_at.localeCompare(b.created_at);

@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Goal, GoalScope } from "@/types/todo";
+import { sortByCompletion } from "@/lib/checklist";
 import { PixelInput } from "@/components/ui/PixelInput";
 import { PixelButton } from "@/components/ui/PixelButton";
 import { PixelCheckbox } from "@/components/ui/PixelCheckbox";
@@ -51,11 +52,13 @@ export function GoalList({ userId, scope, periodKey }: GoalListProps) {
   }
 
   async function toggleDone(goal: Goal) {
+    const nextDone = !goal.is_done;
+    const completedAt = nextDone ? new Date().toISOString() : null;
     setGoals((prev) =>
-      prev.map((g) => (g.id === goal.id ? { ...g, is_done: !g.is_done } : g)),
+      prev.map((g) => (g.id === goal.id ? { ...g, is_done: nextDone, completed_at: completedAt } : g)),
     );
     const supabase = createClient();
-    await supabase.from("goals").update({ is_done: !goal.is_done }).eq("id", goal.id);
+    await supabase.from("goals").update({ is_done: nextDone, completed_at: completedAt }).eq("id", goal.id);
   }
 
   async function remove(goal: Goal) {
@@ -63,6 +66,8 @@ export function GoalList({ userId, scope, periodKey }: GoalListProps) {
     const supabase = createClient();
     await supabase.from("goals").delete().eq("id", goal.id);
   }
+
+  const sortedGoals = sortByCompletion(goals);
 
   return (
     <div className="flex flex-col gap-2">
@@ -84,7 +89,7 @@ export function GoalList({ userId, scope, periodKey }: GoalListProps) {
         <p className="font-body text-sm text-pixel-ink-soft py-2">아직 목표가 없어요.</p>
       ) : (
         <ul className="flex flex-col gap-1.5">
-          {goals.map((goal) => (
+          {sortedGoals.map((goal) => (
             <li
               key={goal.id}
               className="flex items-center gap-2 border-2 border-pixel-border rounded-[10px] px-2.5 py-1.5 bg-pixel-bg"

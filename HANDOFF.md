@@ -3,9 +3,42 @@
 Running handoff note for the next agent. Update this file (don't append a new one) after a meaningful chunk
 of work — read this file first, before digging through conversation history or git log.
 
-_Last updated: 2026-07-30_
+_Last updated: 2026-07-31_
 
 ## Tried
+
+- **Checked items in TodoList/GoalList/TodayRoutineList now float to the top, ordered by when they were
+  checked (earliest-checked = topmost)** — new migration `0010_todo_completed_at.sql` adds a nullable
+  `completed_at timestamptz` to `todos`/`goals`/`routines`, since none of the three tables had any timestamp
+  of *when* an item was marked done (only the boolean `is_done`), which is required info to order multiple
+  checked items relative to each other:
+  - New shared `src/lib/checklist.ts` (`sortByCompletion<T>(items, tieBreaker?)`) — done items always sort
+    before not-done items, and among done items sorts by `completed_at` ascending; not-done items keep
+    whatever order `tieBreaker` gives them (defaults to `created_at` ascending, i.e. unchanged registration
+    order). Used by all three call sites so the rule is defined once, not copy-pasted three times.
+  - `TodoList.tsx`/`GoalList.tsx`: `toggleDone()` now also stamps `completed_at` (current timestamp when
+    checking, `null` again when unchecking — so re-checking later re-enters at a fresh position, not its old
+    spot) alongside the existing `is_done` update, and renders `sortByCompletion(todos/goals)` instead of the
+    raw fetch order.
+  - `TodayRoutineList.tsx`: same `completed_at` stamping on `toggle()`, but passes a custom `tieBreaker` to
+    `sortByCompletion` (period rank → `created_at`, i.e. the *same* 오전/오후/저녁 grouping logic it already
+    had) — so checked items pool together at the very top regardless of which time-period they came from,
+    while still-unchecked items keep their existing 오전→오후→저녁 grouping underneath. This was a deliberate
+    design choice (not explicitly spelled out by the user) to reconcile "checked things go to the top" with
+    the routine list's existing period-tag structure, rather than either ignoring period grouping entirely or
+    skipping this list.
+  - **Deliberately did NOT touch `TodayEventList.tsx`'s "오늘의 일정" O/X sort** (`sortDailyEvents()` in
+    `src/lib/events.ts`, still unchecked→o→x top-to-bottom) even though it's also "체크하는" in a loose
+    sense — that list has its own recently-fixed drag-to-reorder + reschedule-on-X semantics (see the
+    previous entry below), and the user's request didn't explicitly call it out; flip it too if asked, but
+    don't assume this batch covers it.
+  - `npx tsc --noEmit`, `npm run lint`, `npm run build` all pass clean. Not manually browser-tested (checking
+    multiple items in sequence and confirming they stack top-to-bottom in check order, unchecking one and
+    confirming it drops back down to the bottom of the not-done group rather than keeping a stale position,
+    and the routine list's checked-items-pool-together-across-periods behavior actually reading as intended
+    rather than confusing) — build/lint only. **User needs to run
+    `supabase/migrations/0010_todo_completed_at.sql`** before this works end-to-end; until then, checking an
+    item will error at the DB layer (unknown column `completed_at`).
 
 - **Moved "내 계정" out of the regular sidebar nav list into a new bottom section next to 로그아웃, and
   removed the mascot/greeting decoration** (`Sidebar.tsx`, `Dashboard.tsx`) — user explicitly walked back an
@@ -810,6 +843,9 @@ _Last updated: 2026-07-30_
   9. `supabase/migrations/0009_diary_mood_and_retrospectives.sql` (`diary_entries.mood` column + new
      `retrospectives` table — needed for the mood-emoji picker in 오늘의 일기 and the new "이달의 회고" card
      on the monthly tab; without this, saving a diary mood or a retrospective will error at the DB layer)
+  10. `supabase/migrations/0010_todo_completed_at.sql` (`todos`/`goals`/`routines.completed_at` column —
+      needed for checked-items-float-to-top-in-check-order ordering in TodoList/GoalList/TodayRoutineList;
+      without this, checking a todo/goal/routine item off will error at the DB layer)
 
   Until the user runs all pending ones in order, those features will error at the DB layer (or, for #7
   specifically, old events just silently fall back to the `general` color via `eventColor()`'s `??` —
@@ -850,6 +886,11 @@ _Last updated: 2026-07-30_
 
 ## Next steps (priority order)
 
+-7. **User needs to run `supabase/migrations/0010_todo_completed_at.sql`** before checking off a todo/goal/
+   routine item works end-to-end (checking one will currently error at the DB layer without it). Not manually
+   browser-tested: checking several items in sequence stacks them top-to-bottom in check order, unchecking
+   drops an item back into the not-done group instead of leaving it stuck at the top, and the routine list's
+   checked items pooling together above the 오전/오후/저녁 groups reads sensibly in practice.
 -6. Not manually browser-tested (this session's latest batch): drag a daily-planner "오늘의 일정" item and
    confirm it stays in the dropped position (not just during the drag, *after* releasing) — including a page
    refresh afterward to confirm it persisted (needs `0006_event_sort_order.sql` run first, see "Failed /

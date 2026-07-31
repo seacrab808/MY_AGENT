@@ -7,6 +7,7 @@ export interface Todo {
   period_key: string;
   title: string;
   is_done: boolean;
+  completed_at: string | null;
   created_at: string;
 }
 
@@ -19,5 +20,6 @@ export interface Goal {
   period_key: string;
   title: string;
   is_done: boolean;
+  completed_at: string | null;
   created_at: string;
 }
