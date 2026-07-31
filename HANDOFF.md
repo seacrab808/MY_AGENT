@@ -7,6 +7,33 @@ _Last updated: 2026-07-31_
 
 ## Tried
 
+- **User reported "이달의 회고랑 오늘의 일기 왜 저장이 안되어있지" — investigated, most likely root cause is
+  the still-unrun `0009_diary_mood_and_retrospectives.sql` migration, but the bigger/permanent fix is that
+  `DiaryBox.tsx`/`MonthlyRetrospective.tsx` were silently swallowing save/load errors with zero user-visible
+  feedback**, so *any* DB-layer failure (missing migration or otherwise) looked identical to "did nothing,
+  no explanation" — which is exactly the confusing symptom reported:
+  - Both components' `.then(({ data }) => ...)` load callback and `handleSave()`'s `if (!error)` check
+    discarded the Postgrest `error` object entirely on failure — no `console.error`, no UI message, nothing.
+    A missing `mood` column (diary) or missing `retrospectives` table (retrospective) — exactly what happens
+    if `0009_diary_mood_and_retrospectives.sql` hasn't been run yet, which per this file's own "Failed /
+    blocked" list below, it hadn't as of the last check — would make every save silently no-op forever, with
+    the textarea just looking like it reset/never actually persisted.
+  - **Fix**: both components now keep an `errorMsg` state, set from the destructured `error` on *both* the
+    load effect and `handleSave()`, and render it in red (`text-pixel-red`) next to the save button/"저장됨"
+    timestamp — showing the raw Postgrest error message (e.g. `column "mood" of relation "diary_entries"
+    does not exist`, which is exactly what you'd see right now if the migration is still pending) so this is
+    self-diagnosing going forward instead of a silent no-op that requires guessing.
+  - **This same silent-failure pattern likely also affects `TodoList.tsx`/`GoalList.tsx`/
+    `TodayRoutineList.tsx`'s new `completed_at` stamping from the previous entry** (their `toggleDone`/
+    `toggle` don't check the update's `error` either) — not fixed in this pass since the user only reported
+    diary/retrospective specifically, but flagging since it's the exact same class of bug and would show the
+    same "checking doesn't seem to save" symptom once someone notices.
+  - `npx tsc --noEmit`, `npm run lint`, `npm run build` all pass clean. **Told the user directly: run
+    `supabase/migrations/0009_diary_mood_and_retrospectives.sql` if not done yet** — this is the single most
+    likely fix for the reported symptom; the error-surfacing change is a diagnostic safety net on top of that,
+    not a replacement for actually running the migration. Not manually confirmed against the live DB (no
+    credentials in this environment) whether the migration has in fact been run or not.
+
 - **Checked items in TodoList/GoalList/TodayRoutineList now float to the top, ordered by when they were
   checked (earliest-checked = topmost)** — new migration `0010_todo_completed_at.sql` adds a nullable
   `completed_at timestamptz` to `todos`/`goals`/`routines`, since none of the three tables had any timestamp
