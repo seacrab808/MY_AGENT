@@ -254,4 +254,9 @@ body::after,
     background: transparent !important;
     box-shadow: none !important;
   }
+  /* 노트 안에 하이라이트(mark)가 있으면 인쇄본에서도 강조 배경만은 살려서 보여줌 —
+     위 `.paper-print *` 규칙이 모든 배경을 지우는 것의 유일한 예외. */
+  .paper-print mark {
+    background: #fff59d !important;
+  }
 }

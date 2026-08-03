@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState, type KeyboardEvent } from "react";
 import type { Paper, PaperNoteFields, TermConceptEntry } from "@/types/paper";
 import { PAPER_NOTE_FIELDS } from "@/lib/paperNotes";
+import { isHtmlEmpty, sanitizeHtml } from "@/lib/richText";
 import { PixelInput } from "@/components/ui/PixelInput";
 import { PixelButton } from "@/components/ui/PixelButton";
 import { PixelCard } from "@/components/ui/PixelCard";
+import { RichTextEditor } from "@/components/paper/RichTextEditor";
 
 interface PaperNoteFormProps {
   paper: Paper;
@@ -28,8 +30,13 @@ export function PaperNoteForm({ paper, onSave, onDelete }: PaperNoteFormProps) {
     setNotes((prev) => ({ ...prev, [key]: value }));
   }
 
+  // 새 용어 행을 추가하고 나면 바로 이어서 다음 용어를 타이핑할 수 있도록 그 입력창으로 포커스를 옮김.
+  const termInputRefs = useRef<Array<HTMLInputElement | null>>([]);
+
   function addBackgroundEntry() {
+    const newIndex = notes.background.length;
     setNotes((prev) => ({ ...prev, background: [...prev.background, { term: "", concept: "" }] }));
+    requestAnimationFrame(() => termInputRefs.current[newIndex]?.focus());
   }
 
   function updateBackgroundEntry(index: number, field: keyof TermConceptEntry, value: string) {
@@ -41,6 +48,18 @@ export function PaperNoteForm({ paper, onSave, onDelete }: PaperNoteFormProps) {
 
   function removeBackgroundEntry(index: number) {
     setNotes((prev) => ({ ...prev, background: prev.background.filter((_, i) => i !== index) }));
+  }
+
+  // 용어 입력창에서 Enter를 누르면 그 행을 등록하고 다음 용어 입력으로 넘어감(한글 조합 중 Enter는 무시해서
+  // 조합 확정 Enter가 실수로 두 번 처리되지 않게 함).
+  function handleTermKeyDown(e: KeyboardEvent<HTMLInputElement>, index: number) {
+    if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
+    e.preventDefault();
+    if (index === notes.background.length - 1) {
+      addBackgroundEntry();
+    } else {
+      termInputRefs.current[index + 1]?.focus();
+    }
   }
 
   async function handleSave() {
@@ -106,29 +125,36 @@ export function PaperNoteForm({ paper, onSave, onDelete }: PaperNoteFormProps) {
                     </p>
                   )}
                   {notes.background.map((entry, i) => (
-                    <div key={i} className="flex gap-2 items-start">
-                      <PixelInput
-                        value={entry.term}
-                        onChange={(e) => updateBackgroundEntry(i, "term", e.target.value)}
-                        placeholder="용어"
-                        className="w-32 shrink-0 text-sm"
-                      />
-                      <span className="font-cute text-sm pt-2 shrink-0">→</span>
-                      <textarea
+                    <div
+                      key={i}
+                      className="flex flex-col gap-1.5 border-2 border-dashed border-pixel-border rounded-[10px] p-2"
+                    >
+                      <div className="flex gap-2 items-start">
+                        <PixelInput
+                          ref={(el) => {
+                            termInputRefs.current[i] = el;
+                          }}
+                          value={entry.term}
+                          onChange={(e) => updateBackgroundEntry(i, "term", e.target.value)}
+                          onKeyDown={(e) => handleTermKeyDown(e, i)}
+                          placeholder="용어 (입력 후 Enter로 다음 용어 추가)"
+                          className="flex-1 min-w-0 text-sm font-bold"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeBackgroundEntry(i)}
+                          aria-label="용어 삭제"
+                          className="shrink-0 font-cute text-xs font-bold min-w-[28px] min-h-[28px] flex items-center justify-center border-2 border-pixel-border rounded-full bg-pixel-red text-pixel-bg shadow-[var(--pixel-shadow-sm)] active:scale-95 cursor-pointer transition-transform"
+                        >
+                          X
+                        </button>
+                      </div>
+                      <RichTextEditor
                         value={entry.concept}
-                        onChange={(e) => updateBackgroundEntry(i, "concept", e.target.value)}
-                        placeholder="개념 설명"
-                        rows={2}
-                        className="flex-1 font-body text-sm px-3 py-2 border-2 border-pixel-border rounded-[12px] bg-pixel-bg text-pixel-ink placeholder:text-pixel-ink-soft shadow-[inset_0_1px_3px_rgba(120,90,70,0.08)] focus:outline-none focus:ring-2 focus:ring-pixel-purple resize-y"
+                        onChange={(html) => updateBackgroundEntry(i, "concept", html)}
+                        placeholder="개념 설명 (중요한 부분은 굵게/하이라이트 해보세요)"
+                        minHeightClassName="min-h-[3.5rem]"
                       />
-                      <button
-                        type="button"
-                        onClick={() => removeBackgroundEntry(i)}
-                        aria-label="용어 삭제"
-                        className="shrink-0 font-cute text-xs font-bold min-w-[28px] min-h-[28px] mt-0.5 flex items-center justify-center border-2 border-pixel-border rounded-full bg-pixel-red text-pixel-bg shadow-[var(--pixel-shadow-sm)] active:scale-95 cursor-pointer transition-transform"
-                      >
-                        X
-                      </button>
                     </div>
                   ))}
                   <PixelButton
@@ -141,13 +167,12 @@ export function PaperNoteForm({ paper, onSave, onDelete }: PaperNoteFormProps) {
                   </PixelButton>
                 </div>
               ) : (
-                <textarea
+                <RichTextEditor
                   value={notes[field.key as Exclude<keyof PaperNoteFields, "background">]}
-                  onChange={(e) =>
-                    updateField(field.key as Exclude<keyof PaperNoteFields, "background">, e.target.value)
+                  onChange={(html) =>
+                    updateField(field.key as Exclude<keyof PaperNoteFields, "background">, html)
                   }
-                  rows={3}
-                  className="font-body text-sm px-3 py-2 border-2 border-pixel-border rounded-[12px] bg-pixel-bg text-pixel-ink placeholder:text-pixel-ink-soft shadow-[inset_0_1px_3px_rgba(120,90,70,0.08)] focus:outline-none focus:ring-2 focus:ring-pixel-purple resize-y"
+                  placeholder="중요한 부분은 굵게/하이라이트 해보세요"
                 />
               )}
             </div>
@@ -204,7 +229,12 @@ export function PaperNoteForm({ paper, onSave, onDelete }: PaperNoteFormProps) {
                     <ul className="text-sm list-disc pl-5">
                       {notes.background.map((entry, i) => (
                         <li key={i} className="whitespace-pre-wrap">
-                          <strong>{entry.term || "(용어 없음)"}</strong> → {entry.concept || "—"}
+                          <strong>{entry.term || "(용어 없음)"}</strong> →{" "}
+                          {isHtmlEmpty(entry.concept) ? (
+                            "—"
+                          ) : (
+                            <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(entry.concept) }} />
+                          )}
                         </li>
                       ))}
                     </ul>
@@ -212,7 +242,19 @@ export function PaperNoteForm({ paper, onSave, onDelete }: PaperNoteFormProps) {
                     <p className="text-sm">—</p>
                   )
                 ) : (
-                  <p className="text-sm whitespace-pre-wrap">{notes[field.key] || "—"}</p>
+                  <div className="text-sm whitespace-pre-wrap">
+                    {isHtmlEmpty(notes[field.key as Exclude<keyof PaperNoteFields, "background">]) ? (
+                      "—"
+                    ) : (
+                      <span
+                        dangerouslySetInnerHTML={{
+                          __html: sanitizeHtml(
+                            notes[field.key as Exclude<keyof PaperNoteFields, "background">],
+                          ),
+                        }}
+                      />
+                    )}
+                  </div>
                 )}
               </div>
             </div>
