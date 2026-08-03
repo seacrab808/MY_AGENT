@@ -15,6 +15,7 @@ import { DailyPlannerTab } from "@/components/tabs/DailyPlannerTab";
 import { RoutinePresetTab } from "@/components/tabs/RoutinePresetTab";
 import { GoalsTab } from "@/components/tabs/GoalsTab";
 import { VocabQuizTab } from "@/components/tabs/VocabQuizTab";
+import { PapersTab } from "@/components/tabs/PapersTab";
 import { AccountTab } from "@/components/tabs/AccountTab";
 import { TodayPopup } from "@/components/notifications/TodayPopup";
 import { WeeklyPopup } from "@/components/notifications/WeeklyPopup";
@@ -94,7 +95,7 @@ export function Dashboard({
 
         {/* md 이상에서는 Sidebar가 position:fixed라 flex 흐름에서 빠지므로, gap-4가 만들어주던
             자리를 md:pl-[16rem](사이드바 폭 15rem + gap 1rem)로 직접 비워줌 */}
-        <div className="flex-1 min-w-0 w-full md:pl-[16rem]">
+        <div className="flex-1 min-w-0 w-full md:pl-[16rem] print:pl-0">
           {activeTab === "monthly" && (
             <MonthlyTab
               userId={userId}
@@ -122,6 +123,7 @@ export function Dashboard({
           {activeTab === "routine_preset" && <RoutinePresetTab userId={userId} />}
           {activeTab === "goals" && <GoalsTab userId={userId} />}
           {activeTab === "vocab" && <VocabQuizTab userId={userId} />}
+          {activeTab === "papers" && <PapersTab userId={userId} />}
           {activeTab === "account" && (
             <AccountTab
               userId={userId}
@@ -133,20 +135,22 @@ export function Dashboard({
         </div>
       </div>
 
-      <TodayPopup
-        open={todayPopupOpen}
-        onClose={() => setTodayPopupOpen(false)}
-        todayLabel={`${format(today, "M/d")} ${KOREAN_WEEKDAY[today.getDay()]}요일`}
-        events={todayEvents}
-      />
+      <div className="print:hidden">
+        <TodayPopup
+          open={todayPopupOpen}
+          onClose={() => setTodayPopupOpen(false)}
+          todayLabel={`${format(today, "M/d")} ${KOREAN_WEEKDAY[today.getDay()]}요일`}
+          events={todayEvents}
+        />
 
-      <WeeklyPopup
-        open={weeklyPopupOpen}
-        onClose={() => setWeeklyPopupOpen(false)}
-        weekStart={new Date(weekRange.start)}
-        weekEnd={new Date(weekRange.end)}
-        events={weekEvents}
-      />
+        <WeeklyPopup
+          open={weeklyPopupOpen}
+          onClose={() => setWeeklyPopupOpen(false)}
+          weekStart={new Date(weekRange.start)}
+          weekEnd={new Date(weekRange.end)}
+          events={weekEvents}
+        />
+      </div>
     </div>
   );
 }

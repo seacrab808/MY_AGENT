@@ -7,6 +7,67 @@ _Last updated: 2026-08-03_
 
 ## Tried
 
+- **New "논문 리딩" (paper reading) tab** — user is done drilling vocab for now and wants to read/organize
+  papers instead, structured around a fixed 15-question template (아이디어: 정곡을 찌르는 문제 + 왜 지금까지
+  못 봤는지 + 왜 재밌는지, per the tables the user typed out verbatim):
+  - **New `papers` table** (`supabase/migrations/0011_papers.sql`): `id`/`user_id`/`title`/`url`/`notes
+    jsonb`/`created_at`/`updated_at`, owner-only RLS, same pattern as every other per-user table in this app.
+    `notes` is a single `jsonb` blob (not 15 separate columns) keyed by the field names in
+    `src/lib/paperNotes.ts`'s `PAPER_NOTE_FIELDS` — chosen since these 15 fields are pure user text with no
+    query/filter need on individual fields, and a single jsonb column is one migration instead of fifteen
+    columns to add/rename if the template ever changes.
+  - **`src/types/paper.ts`** (`Paper`, `PaperNoteFields`) + **`src/lib/paperNotes.ts`**: `PAPER_NOTE_FIELDS`
+    is the user's 15-row table (# / 항목 / 핵심 질문) transcribed as data, not hardcoded per-field JSX, so the
+    form/print-view/etc. all just `.map()` over it — adding/reordering/rewording a question later is a
+    one-line change in this one array, not a hunt through JSX. `normalizePaperNotes()` defensively coerces
+    whatever comes back from the `jsonb` column (which Postgres/PostgREST gives zero compile-time guarantees
+    about) into always having all 15 keys as strings, so an older/partially-filled row never crashes a
+    `.value` access on `undefined`.
+  - **No file/image upload** — deliberately, per the explicit "사진이나 문서 업로드는 안 하려고." Each paper
+    is just a `title` + an optional `url` (any link, typically an arXiv/OpenReview/etc. PDF URL), rendered as
+    a plain `<a target="_blank" rel="noopener noreferrer">` — clicking it opens the PDF in a new tab exactly
+    as asked, no download/storage/bucket involved at all.
+  - **New components**: `src/components/paper/PaperList.tsx` (add-paper mini-form + a selectable list, each
+    row has a small "↗" open-in-new-tab link when a `url` is set, plus an X-with-confirm delete — same
+    immediate-delete-with-confirm-step UX as `TodoList`/`GoalList`) and
+    `src/components/paper/PaperNoteForm.tsx` (title/url fields + all 15 fields as labeled
+    `label`/`question`/`textarea` blocks, one shared "저장" button for the whole note — same
+    single-button-saves-everything pattern as `DiaryBox`/`MonthlyRetrospective`, not 15 separate autosaves).
+    `src/components/tabs/PapersTab.tsx` wires them together (fetch/add/save/delete against `papers`,
+    `newest-first` order) and is a 2-column `lg:grid-cols-[300px_1fr]` layout (list | detail), collapsing to
+    stacked on mobile. **Learned from the diary/retrospective silent-failure bug earlier this session**:
+    `PaperNoteForm`'s save button surfaces `error.message` in red next to it on failure, from the start,
+    rather than needing a follow-up bug report to add that later.
+  - **PDF export is `window.print()` + a dedicated print-only view, not a JS PDF-generation library.**
+    This was a deliberate trade-off, flagged here in case the user expected a literal one-click file
+    download instead: real one-click PDF libraries in the browser are either `jsPDF` (built-in fonts have
+    **zero Korean glyph support** — Korean text would render blank/garbled without embedding a Korean font,
+    a large added dependency) or `html2canvas`+`jsPDF` (rasterizes the DOM into an image — sidesteps the font
+    problem but produces blurry, non-selectable, non-searchable "text", and needs manual page-split logic for
+    long content). `window.print()` uses the browser's own text renderer, so Korean (or any language) just
+    works with zero extra dependencies, and the browser handles pagination — the one UX cost is that clicking
+    "📄 PDF로 내보내기" opens the native print dialog rather than instantly saving a file; the user picks
+    "PDF로 저장"/"Save as PDF" as the destination there (1 extra click), which is a widely-used "Export to
+    PDF" pattern on the web but is *not* a true single click. Implementation: `PaperNoteForm` renders two
+    sibling blocks — the normal editable form (`print:hidden`) and a separate plain-text summary block
+    (`hidden print:block`, class `paper-print`) that mirrors the *current* (possibly-unsaved) textarea values,
+    so exporting reflects exactly what's on screen, not just the last save. `Sidebar.tsx` gained `print:hidden`
+    on its root (a sidebar should never appear in any printed output, not just this tab's), and
+    `Dashboard.tsx`'s main-content column gained `print:pl-0` to cancel the `md:pl-[16rem]` space it normally
+    reserves for the now-hidden fixed sidebar (otherwise the printed page would have a large blank left
+    margin). New `globals.css` rule: `.paper-print`/`.paper-print *` force `color`/`background`/`box-shadow`
+    to plain dark-on-transparent inside `@media print`, regardless of light/dark mode — without this, printing
+    while in dark mode would produce light-colored (near-invisible) text on the printed page's assumed-white
+    background, since dark mode's `--pixel-ink` is intentionally light for on-screen contrast, not print.
+  - **New tab wired in**: `"papers"` added to `TabKey`/`TABS` in `src/lib/tabs.ts` (labeled "논문 리딩", 📄),
+    positioned right after "단어 카드 퀴즈" and before "채팅창" in the sidebar nav order; `Dashboard.tsx`
+    renders `<PapersTab userId={userId} />` when active, same prop pattern as every sibling tab.
+  - `npx tsc --noEmit`, `npm run lint`, `npm run build` all pass clean. Not manually browser-tested (adding a
+    paper, editing/saving all 15 fields and seeing the error path if the migration isn't run yet, the
+    open-in-new-tab link, and — most importantly — actually clicking "PDF로 내보내기" and confirming the
+    print dialog shows a clean one-column layout with no sidebar/app-chrome bleeding through and readable
+    text in both light and dark mode) — build/lint-checked only, no login creds in this environment.
+
 - **Fixed the vocab `FlipCard`'s real root cause for "세모 저장이 잘 안되고 있는 것 같아" (and the earlier
   "flipping swaps star/triangle clicks" report) — this time actually confirmed with a live browser test, not
   just reasoning**: the *previous* "fixed" pass on this same card (see the "4 smaller fixes" entry further
@@ -908,6 +969,8 @@ _Last updated: 2026-08-03_
   10. `supabase/migrations/0010_todo_completed_at.sql` (`todos`/`goals`/`routines.completed_at` column —
       needed for checked-items-float-to-top-in-check-order ordering in TodoList/GoalList/TodayRoutineList;
       without this, checking a todo/goal/routine item off will error at the DB layer)
+  11. `supabase/migrations/0011_papers.sql` (new `papers` table — needed for the new "논문 리딩" tab; without
+      this, adding a paper or saving its notes will error at the DB layer)
 
   Until the user runs all pending ones in order, those features will error at the DB layer (or, for #7
   specifically, old events just silently fall back to the `general` color via `eventColor()`'s `??` —
@@ -948,6 +1011,14 @@ _Last updated: 2026-08-03_
 
 ## Next steps (priority order)
 
+-8. **User needs to run `supabase/migrations/0011_papers.sql`** before the new "논문 리딩" tab works
+   end-to-end (adding/saving a paper will error at the DB layer without it). Not manually browser-tested:
+   add a paper with and without a URL, fill in a few of the 15 fields and save, confirm the error message
+   shows if the migration hasn't been run, click the list row's "↗" and the detail panel's "PDF 열기" link
+   and confirm both open the URL in a new tab, delete a paper, and — most importantly — click "📄 PDF로
+   내보내기" and confirm the print-preview dialog shows a clean single-column readout (title + all 15
+   fields, no sidebar/other UI, no blank left margin) with dark, readable text regardless of whether the app
+   is currently in light or dark mode.
 -7. **User needs to run `supabase/migrations/0010_todo_completed_at.sql`** before checking off a todo/goal/
    routine item works end-to-end (checking one will currently error at the DB layer without it). Not manually
    browser-tested: checking several items in sequence stacks them top-to-bottom in check order, unchecking

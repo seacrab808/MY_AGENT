@@ -47,7 +47,7 @@ export function Sidebar({ active, onChange, displayName }: SidebarProps) {
     // 맞춰줘야 함 — Dashboard.tsx의 바깥 컨테이너가 정확히 그 수식(max-w-7xl mx-auto p-4)이라
     // left도 똑같은 수식(뷰포트가 좁으면 1rem, 넓으면 가운데 정렬된 여백 + 1rem)으로 따라감.
     // 오른쪽 본문 영역은 Dashboard.tsx에서 sidebar 너비+gap만큼 md:pl-[16rem]으로 비워둠.
-    <div className="w-full md:w-60 shrink-0 md:fixed md:top-4 md:left-[max(1rem,calc((100vw-80rem)/2+1rem))] md:z-10 md:h-[calc(100vh-2rem)] md:overflow-y-auto md:overflow-x-hidden bg-pixel-panel border-2 border-pixel-border rounded-[24px] shadow-[var(--pixel-shadow)] p-4 flex flex-col gap-3">
+    <div className="print:hidden w-full md:w-60 shrink-0 md:fixed md:top-4 md:left-[max(1rem,calc((100vw-80rem)/2+1rem))] md:z-10 md:h-[calc(100vh-2rem)] md:overflow-y-auto md:overflow-x-hidden bg-pixel-panel border-2 border-pixel-border rounded-[24px] shadow-[var(--pixel-shadow)] p-4 flex flex-col gap-3">
       {/* 브랜드: 아바타 + 이름 + 다크모드 토글 */}
       <div className="flex items-center gap-2.5 pb-3 border-b-2 border-dashed border-pixel-border">
         <span

@@ -238,3 +238,20 @@ body::after,
   border-radius: 2px;
   box-shadow: 0 2px 4px rgba(120, 90, 70, 0.18);
 }
+
+/* 논문 리딩 탭의 "PDF로 내보내기" (=window.print) 인쇄 전용 뷰. 화면 다크모드 색이 인쇄까지
+   따라오면 흰 종이에 밝은 글씨가 찍혀 안 보이게 되므로, 인쇄될 땐 라이트/다크모드와 무관하게
+   항상 진한 글씨 + 배경/그림자 없는 상태로 강제함. */
+@media print {
+  @page {
+    margin: 1.5cm;
+  }
+  .paper-print {
+    color: #1a1a1a !important;
+  }
+  .paper-print * {
+    color: inherit !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+}
