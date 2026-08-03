@@ -7,6 +7,39 @@ _Last updated: 2026-08-03_
 
 ## Tried
 
+- **Paper-reading tab: turned "배경 지식" into a repeatable 용어→개념 (term→concept) list, added a 16th
+  "배울 점, 깨달은 점" field, and grouped the 16 questions into 5 labeled sections** — follow-up to the
+  15-question paper tab from earlier the same day (below), per explicit user request to make the
+  background-knowledge field additive (one term at a time) rather than one free-text block, plus a slot for
+  takeaways, plus "whatever design/format improves reading efficiency."
+  - **`src/types/paper.ts`**: new `TermConceptEntry { term, concept }`; `PaperNoteFields.background` changed
+    from `string` to `TermConceptEntry[]`; added `lessons_learned: string` (field #16).
+  - **`src/lib/paperNotes.ts`**: `PaperNoteFieldDef` gained optional `section` (a heading string shown above
+    the first field of a new group — used to render 5 section headers: ① 이해하기 [1-3] → ② 문제 발견 [4-7]
+    → ③ 아이디어와 제안 [8-11] → ④ 검증 [12-13] → ⑤ 총평 [14-16]) and `type?: "text" | "terms"` (only
+    `background` is `"terms"`). `emptyPaperNotes()`/`normalizePaperNotes()` now branch on `field.type`:
+    `"terms"` fields get `[]`/an array-normalizing path, everything else keeps the old string coercion.
+    **Old string-shaped `background` data from papers created before this change is migrated on load** —
+    `normalizeTermConceptList()` wraps a leftover string into a single `{ term: "", concept: <old string> }`
+    entry instead of dropping it, so nothing existing is lost. No SQL migration needed for any of this
+    (`notes` is a jsonb blob, shape lives entirely in app code).
+  - **`src/components/paper/PaperNoteForm.tsx`**: renders `field.section` as a small heading (dashed
+    top-border) before the relevant field, both in the edit form and the print/PDF view. The `background`
+    field gets bespoke UI instead of a shared textarea: a list of term-input + concept-textarea rows (add/
+    remove per row via `addBackgroundEntry`/`updateBackgroundEntry`/`removeBackgroundEntry`), rendered as a
+    bullet list of "**term** → concept" in the print view. `updateField`'s `key` param is now
+    `Exclude<keyof PaperNoteFields, "background">` (background can't go through the generic string setter);
+    the two call sites that read/write `notes[field.key]` inside the non-background branch cast to that same
+    `Exclude<...>` type since TS narrowing from the `field.key === "background"` ternary check doesn't survive
+    into the nested `onChange` closure (a known TS limitation for property-access narrowing across closures,
+    not fixable by restructuring without a cast or an early-return).
+  - **`src/components/tabs/PapersTab.tsx`**: subtitle text updated "15개 질문" → "16개 질문" (and mentions
+    "그래서 뭘 배웠는지").
+  - `npx tsc --noEmit`, `npm run lint`, `npm run build` all pass clean. Not manually browser-tested (adding/
+    removing term↔concept rows, confirming an existing paper's old plain-text background migrates into one
+    row instead of erroring or disappearing, the 5 section headers reading sensibly in both the edit form and
+    the print/PDF export view) — build/lint-checked only, no login creds in this environment.
+
 - **New "논문 리딩" (paper reading) tab** — user is done drilling vocab for now and wants to read/organize
   papers instead, structured around a fixed 15-question template (아이디어: 정곡을 찌르는 문제 + 왜 지금까지
   못 봤는지 + 왜 재밌는지, per the tables the user typed out verbatim):
@@ -1013,12 +1046,14 @@ _Last updated: 2026-08-03_
 
 -8. **User needs to run `supabase/migrations/0011_papers.sql`** before the new "논문 리딩" tab works
    end-to-end (adding/saving a paper will error at the DB layer without it). Not manually browser-tested:
-   add a paper with and without a URL, fill in a few of the 15 fields and save, confirm the error message
-   shows if the migration hasn't been run, click the list row's "↗" and the detail panel's "PDF 열기" link
-   and confirm both open the URL in a new tab, delete a paper, and — most importantly — click "📄 PDF로
-   내보내기" and confirm the print-preview dialog shows a clean single-column readout (title + all 15
-   fields, no sidebar/other UI, no blank left margin) with dark, readable text regardless of whether the app
-   is currently in light or dark mode.
+   add a paper with and without a URL, add/remove a few 용어→개념 rows under "배경 지식", fill in a few of
+   the other 16 fields (including the new #16 "배울 점, 깨달은 점") and save, confirm the error message
+   shows if the migration hasn't been run, confirm the 5 section headers (① 이해하기 ~ ⑤ 총평) render above
+   the right fields, click the list row's "↗" and the detail panel's "PDF 열기" link and confirm both open
+   the URL in a new tab, delete a paper, and — most importantly — click "📄 PDF로 내보내기" and confirm the
+   print-preview dialog shows a clean single-column readout (title + all 16 fields including the
+   term→concept bullet list for 배경 지식, no sidebar/other UI, no blank left margin) with dark, readable
+   text regardless of whether the app is currently in light or dark mode.
 -7. **User needs to run `supabase/migrations/0010_todo_completed_at.sql`** before checking off a todo/goal/
    routine item works end-to-end (checking one will currently error at the DB layer without it). Not manually
    browser-tested: checking several items in sequence stacks them top-to-bottom in check order, unchecking
