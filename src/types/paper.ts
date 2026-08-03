@@ -1,6 +1,11 @@
+export interface TermConceptEntry {
+  term: string;
+  concept: string;
+}
+
 export interface PaperNoteFields {
   summary: string;
-  background: string;
+  background: TermConceptEntry[];
   prior_work: string;
   problem: string;
   evidence: string;
@@ -14,6 +19,7 @@ export interface PaperNoteFields {
   key_results: string;
   novelty_defense: string;
   why_toptier: string;
+  lessons_learned: string;
 }
 
 export interface Paper {

@@ -94,7 +94,7 @@ export function PapersTab({ userId }: PapersTabProps) {
       <div className="print:hidden">
         <h1 className="font-cute text-3xl font-bold">논문 리딩</h1>
         <p className="font-body text-sm text-pixel-ink-soft">
-          📄 정곡을 찌르는 문제인지, 왜 지금까지 못 봤는지, 왜 재밌는지 — 15개 질문으로 정리해요
+          📄 정곡을 찌르는 문제인지, 왜 지금까지 못 봤는지, 왜 재밌는지, 그래서 뭘 배웠는지 — 16개 질문으로 정리해요
         </p>
       </div>
 
