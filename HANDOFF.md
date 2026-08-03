@@ -7,6 +7,53 @@ _Last updated: 2026-08-03_
 
 ## Tried
 
+- **`RichTextEditor.tsx`: highlight toggle-off + a real Ctrl+Z that actually works for formatting, not just
+  typing** — follow-up ask after the typing-fix below: "하이라이트 되면 취소를 못하는데 했다가 취소도 되게
+  해줘. ctrl z도 안 먹히는데 먹히게 했음 좋겠어" (once highlighted, can't undo it; make it toggleable; also
+  make Ctrl+Z actually work).
+  - **Confirmed live via the same temporary unauthenticated QA-route + Playwright technique as the typing
+    fix** (`src/app/qa-richtext/page.tsx` + `src/proxy.ts` matcher exclusion, both fully reverted afterward;
+    `playwright` reinstalled with `--no-save`, not touched in `package.json`/lockfile). Found two real,
+    reproduced-live bugs, not assumed from reading the code:
+    1. **`document.execCommand("hiliteColor"/"bold"/...)` does not reliably push onto the browser's native
+       undo stack** in real Chromium — confirmed by scripting: typing is undoable via native Ctrl+Z, but
+       applying bold/highlight then pressing Ctrl+Z did nothing. This is why "Ctrl+Z doesn't work" specifically
+       started once a highlight had been applied — not a general contentEditable bug, a native-undo gap for
+       execCommand-driven formatting. **Fix: stopped relying on the browser's native undo entirely** and built
+       a small custom undo/redo stack (`pastRef`/`futureRef` of HTML snapshots) that both typing and every
+       toolbar action (bold/highlight/clear/paste) commit to, with Ctrl+Z/Ctrl+Shift+Z now handled in our own
+       `onKeyDown` (`e.preventDefault()` + `undo()`/`redo()`) instead of the browser default. Typing is
+       coalesced into one undo step per ~600ms pause (`TYPING_COALESCE_MS`) so Ctrl+Z undoes a burst of typing
+       at a time like native undo does, not one character at a time.
+    2. **`execCommand(...)` itself fires a native `input` event** (same as real typing does) — the first
+       version of the custom stack captured "state before this edit" inside the `input` handler, which fires
+       *after* the browser already applied the change, so it was capturing post-mutation state as if it were
+       pre-mutation (confirmed live: a typed burst like `" more"` undid to `"...world "`, only removing 4 of 5
+       characters — the space had already been "baked in" by the time the first capture ran). **Fix: moved the
+       pre-change snapshot capture to `onKeyDown` (before the browser mutates anything for that key), with an
+       `isApplyingCommandRef` guard so `execCommand`'s own resulting `input` event doesn't re-trigger the
+       typing-capture path** (that path is for genuine keystrokes only; toolbar actions manage their own
+       snapshot via `commitDiscreteChange`). Re-verified after this fix: two separate typing bursts undo/redo
+       correctly one-at-a-time, a brand-new edit after an undo correctly clears the redo stack (standard undo/
+       redo semantics), and clear-formatting (removeFormat) is itself undoable.
+  - **Highlight toggle**: clicking the 🖍 button again on already-highlighted selected text now removes the
+    highlight (`execCommand("hiliteColor", false, "transparent")`) instead of only ever adding it. Whether a
+    selection is "already highlighted" is checked by walking up the DOM from `selection.anchorNode` looking for
+    an inline `background-color` matching the highlight color — **not** `document.queryCommandValue
+    ("hiliteColor")`, which was tried first but returned unreliable/empty values on already-highlighted text in
+    real testing.
+  - Also added a "↺ 되돌리기" toolbar button (calls the same `undo()` as Ctrl+Z) for discoverability, since
+    Ctrl+Z alone is easy to miss as an option in a toolbar-driven editor.
+  - Highlights now render as `<span style="background-color: ...">` (what `execCommand("hiliteColor")`
+    actually produces in Chromium) rather than the old hand-built `<mark>` — the rounded/padded highlight
+    look (`[&_mark]:rounded-[2px] [&_mark]:px-0.5`) was extended to `[&_span]` too so this still looks right;
+    `sanitizeHtml` (`src/lib/richText.ts`) already allowed `SPAN` with a `backgroundColor` style, so no
+    sanitizer change was needed.
+  - `npx tsc --noEmit`, `npm run lint`, `npm run build` all pass clean, **in addition to** the live Playwright
+    verification above (two separate test scripts covering: type→highlight→toggle-off→re-highlight→Ctrl+Z,
+    typing→Ctrl+Z, bold→"되돌리기" button→Ctrl+Shift+Z redo, two-separate-typing-bursts undo one-at-a-time,
+    redo-stack-clears-on-new-edit, and clear-formatting undo — all passed).
+
 - **Fixed "논문 리딩 탭에 글이 안 써져요" — a real, confirmed-live bug in `RichTextEditor.tsx`, not a
   migration/DB issue**: every one of its fields (all 16 questions, every background term's concept box)
   wiped almost everything the user typed, keystroke by keystroke, making the tab look completely broken for
@@ -1084,6 +1131,10 @@ _Last updated: 2026-08-03_
 
 - `npx tsc --noEmit`, `npx eslint src`, and `npm run build` all pass clean as of this handoff (checked
   after every feature batch, not just once at the end).
+- `RichTextEditor.tsx`'s undo/redo stack and highlight toggle were verified live via Playwright against the
+  real component (see "Tried" above) — this is one of the few paper-tab changes in this file confirmed
+  working in a real running browser, not just build/lint-checked. Not yet exercised inside the real,
+  logged-in "논문 리딩" tab UI (only the isolated component was driven directly) — see "Next steps".
 - Confirmed via a standalone script that `gemini-flash-latest` correctly parses a Korean range-event
   message ("8월 23일부터 24일까지 제주도 여행이 있어") into `event_date`/`event_end_date`.
 - Confirmed the multi-day overlap query (`fetchEventsForRange` in `src/lib/events.ts`) constructs correct
@@ -1167,6 +1218,15 @@ _Last updated: 2026-08-03_
 
 ## Next steps (priority order)
 
+-9. Not manually browser-tested inside the real, logged-in "논문 리딩" tab (only the isolated `RichTextEditor`
+   component was driven directly via a temporary QA route, since there's no login in this environment — see
+   "Tried" above): open a paper, type in any field, select some text and click 🖍 to highlight it, click 🖍
+   again on the same selection and confirm the highlight is removed (not just cleared via "지우기"), Ctrl+Z
+   after highlighting and confirm it un-highlights (not a no-op), keep pressing Ctrl+Z and confirm it walks
+   back further through earlier typing too, and Ctrl+Shift+Z to confirm redo brings changes back. Also worth
+   confirming the "📄 PDF로 내보내기" print view still renders highlighted text correctly now that highlights
+   are `<span style="background-color:...">` instead of `<mark>` (should be unaffected since `sanitizeHtml`
+   treats both the same way, but not re-checked after this change).
 -8. **User needs to run `supabase/migrations/0011_papers.sql`** before the new "논문 리딩" tab works
    end-to-end (adding/saving a paper will error at the DB layer without it). Not manually browser-tested:
    add a paper with and without a URL, add a few 용어→개념 rows under "배경 지식" (typing a term then
