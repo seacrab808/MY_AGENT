@@ -7,6 +7,59 @@ _Last updated: 2026-08-03_
 
 ## Tried
 
+- **Fixed "논문 리딩 탭에 글이 안 써져요" — a real, confirmed-live bug in `RichTextEditor.tsx`, not a
+  migration/DB issue**: every one of its fields (all 16 questions, every background term's concept box)
+  wiped almost everything the user typed, keystroke by keystroke, making the tab look completely broken for
+  writing (typing "Hello" would end up empty; only a stray character or two survived by luck of timing) —
+  this affected the tab regardless of whether `0011_papers.sql` had been run, since it's a pure frontend
+  rendering bug, not a save/persistence failure.
+  - **Root cause, confirmed live in a real browser, not just read from the source**: `RichTextEditor.tsx`
+    intentionally treats its `contentEditable` div as "uncontrolled" — it sets `dangerouslySetInnerHTML`
+    from a `useState` initializer that runs once at mount and is never updated again, specifically so React
+    never re-touches the div's children while the user types (a comment already in that file explains this
+    exact intent, and it's the standard/correct trick for this problem *in React ≤18*). But **React 19 has a
+    documented regression** ([facebook/react#31660](https://github.com/facebook/react/issues/31660)): it now
+    diffs `dangerouslySetInnerHTML` by *object identity*, not by the `__html` string inside it. Since
+    `dangerouslySetInnerHTML={{ __html: initialHtml }}` creates a **new object literal on every render** even
+    though `initialHtml` itself never changes, React 19 always sees "a different object" and force-resets
+    `innerHTML` on *every single re-render* — including the one caused by the field's own `onChange` firing
+    on every keystroke (parent `setNotes` → re-render → wipe). This app is on `react@19.2.4`/`next@16.2.12`
+    (confirmed via `package.json`), squarely in the affected range; the "freeze it once via useState" trick
+    that works fine in React ≤18 silently stopped working here with zero error/warning.
+  - **Confirmed with a live, empirical Playwright test — not just read the GitHub issue and assumed it
+    applied**: since this app's real pages are all behind Supabase auth and there are no login credentials in
+    this environment, temporarily added an unauthenticated QA-only route (`src/app/qa-richtext/page.tsx`,
+    excluded from `src/proxy.ts`'s auth matcher) that mounted the real `RichTextEditor` component directly,
+    ran `npm run dev`, and drove it with Playwright: typing "Hello" produced `innerHTML=""` after almost
+    every keystroke pre-fix; isolating further (a second editor instance with a no-op `onChange`, so no
+    parent re-render happens) showed typing worked correctly *except the very first character* — proving the
+    bug specifically needs "the surrounding tree re-rendering on every keystroke" (which the real
+    `onChange`/`setNotes` wiring triggers) to manifest continuously. **Both the QA route and the
+    `src/proxy.ts` matcher change were fully reverted** after verification — nothing QA-related remains in
+    the codebase or is reachable in production; also removed the temporary local-only `playwright` npm
+    package used to drive the test (installed with `--no-save`, never touched `package.json`/lockfile).
+  - **Fix**: wrapped the `dangerouslySetInnerHTML` object in a `useMemo(() => ({ __html: initialHtml }),
+    [initialHtml])` — since `initialHtml` never changes after mount, this gives React 19's now-broken
+    identity check a *stable* object reference to compare against, so it correctly skips re-applying
+    `innerHTML` on every render, restoring the originally-intended "typed content survives re-renders"
+    behavior. One-line functional change; the rest of the component (bold/highlight toolbar, paste
+    sanitization, Enter-to-add-next-term) was untouched since those were never actually broken.
+  - **Re-ran the exact same live Playwright test after the fix**: typing `"Hello 안녕하세요"` (mixed
+    English + Korean IME composition) now persists correctly, `Ctrl+A` → **B** (bold toolbar button)
+    correctly wraps the full text in `<b>`, typing *more* text after applying bold still appends correctly
+    (doesn't re-break), and a malicious paste payload (`<img onerror>` + `<script>`) is still fully stripped
+    down to plain text with no dialog firing — all previously-verified behaviors from the rich-text-editor
+    entry below still hold after this change.
+  - **Grepped the rest of the codebase for the same `dangerouslySetInnerHTML={{ __html: ... }}` inline-object
+    pattern** to check for the same bug elsewhere: `layout.tsx`'s theme-init `<script>` tag is a static
+    string on a non-interactive element (harmless, never re-rendered per-keystroke); `PaperNoteForm.tsx`'s
+    *print-only* view (`hidden print:block`) also inlines the object, but that block is never
+    `contentEditable`/user-typed-into — it just redisplays already-sanitized HTML, so a fresh object every
+    render is inconsequential there. **`RichTextEditor.tsx` was the only actually-broken call site.**
+  - `npx tsc --noEmit`, `npm run lint`, `npm run build` all pass clean, **in addition to** the live
+    Playwright verification above — this is one of the few paper-tab changes in this file confirmed working
+    in a real running browser, not just build/lint-checked.
+
 - **Paper-reading tab: Enter-to-add for background terms, and a real bold/highlight rich-text editor for
   every note field** — follow-up to the term→concept/16-field/sections change directly below, per two
   explicit user asks: (1) the term input could hold long text and should register-and-advance on Enter, and

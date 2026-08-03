@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ClipboardEvent } from "react";
+import { useMemo, useRef, useState, type ClipboardEvent } from "react";
 import { plainValueToEditableHtml, sanitizeHtml } from "@/lib/richText";
 
 interface RichTextEditorProps {
@@ -20,6 +20,13 @@ const HIGHLIGHT_COLOR = "#fff59d";
 export function RichTextEditor({ value, onChange, placeholder, minHeightClassName = "min-h-[4.5rem]" }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const [initialHtml] = useState(() => plainValueToEditableHtml(value));
+  // React 19 diffs `dangerouslySetInnerHTML` by object identity, not by the `__html` string inside
+  // it (a documented regression: https://github.com/facebook/react/issues/31660) — a fresh `{ __html }`
+  // object literal below would make React think the content "changed" on *every* render and force-reset
+  // `innerHTML`, wiping whatever was just typed before the browser even finishes painting it (confirmed
+  // live: every keystroke past the first got erased). `initialHtml` itself never changes after mount, so
+  // memoizing on it gives a stable object reference React will actually skip re-applying.
+  const dangerousHtml = useMemo(() => ({ __html: initialHtml }), [initialHtml]);
   const [isEmpty, setIsEmpty] = useState(() => value.trim() === "");
 
   function syncChange() {
@@ -119,7 +126,7 @@ export function RichTextEditor({ value, onChange, placeholder, minHeightClassNam
           suppressContentEditableWarning
           onInput={syncChange}
           onPaste={handlePaste}
-          dangerouslySetInnerHTML={{ __html: initialHtml }}
+          dangerouslySetInnerHTML={dangerousHtml}
           className={`${minHeightClassName} w-full font-body text-sm px-3 py-2 border-2 border-pixel-border rounded-[12px] bg-pixel-bg text-pixel-ink shadow-[inset_0_1px_3px_rgba(120,90,70,0.08)] focus:outline-none focus:ring-2 focus:ring-pixel-purple whitespace-pre-wrap break-words [&_mark]:rounded-[2px] [&_mark]:px-0.5`}
         />
       </div>
