@@ -7,6 +7,76 @@ _Last updated: 2026-08-03_
 
 ## Tried
 
+- **Paper-reading tab: Enter-to-add for background terms, and a real bold/highlight rich-text editor for
+  every note field** — follow-up to the term→concept/16-field/sections change directly below, per two
+  explicit user asks: (1) the term input could hold long text and should register-and-advance on Enter, and
+  (2) "하이라이트나 bold 표시하면서 편집할 수는 없나" — asked via `AskUserQuestion` whether to build this as
+  markdown-syntax + live preview (safer, simpler) or a true WYSIWYG editor; **user picked true WYSIWYG**.
+  - **Background term input redesign** (`PaperNoteForm.tsx`): each `{term, concept}` row is now a
+    dashed-bordered mini-card with the term `PixelInput` stacked *above* a full-width concept box (was a
+    fixed `w-32` input inline with the concept textarea — too narrow for a long term, which is exactly what
+    the user flagged). Pressing Enter in a term input calls `addBackgroundEntry()` and focuses the new row's
+    term input (via a `termInputRefs` ref array + `requestAnimationFrame`-deferred `.focus()`, since the new
+    DOM node doesn't exist until after the state update re-renders); Enter fired mid-Hangul-composition is
+    ignored (`e.nativeEvent.isComposing` check) so committing a composed syllable doesn't double-fire.
+  - **New `src/components/paper/RichTextEditor.tsx`** replaces the plain `<textarea>` on *every* note field
+    (all 16 questions, plus each background entry's concept box) — a small **B** / 🖍 (highlight) / "지우기"
+    (clear formatting) toolbar over a `contentEditable` div, so selecting text and clicking a button applies
+    real bold/highlight immediately, not markdown syntax needing a separate preview.
+    - Bold: `document.execCommand("bold")` (deprecated API, but still the simplest cross-browser way to get
+      this with zero new dependencies; acceptable for a personal Chromium-based app).
+    - Highlight: **not** execCommand (its `hiliteColor` produces an arbitrary `<span>`, not a semantic,
+      CSS-targetable tag) — instead manually wraps the current `Range` in a `<mark style="background-color:
+      ...">` via `range.surroundContents()`, falling back to `extractContents()`+`insertNode()` when the
+      selection spans multiple block elements (`surroundContents` throws in that case).
+    - Toolbar buttons use `onMouseDown={(e) => e.preventDefault()}` — without this, clicking a button steals
+      focus/collapses the text selection in the contentEditable *before* the click handler runs, so
+      `execCommand`/`Range` would have nothing to act on.
+    - **contentEditable is deliberately "uncontrolled" from React's side**: `dangerouslySetInnerHTML` is only
+      set from a `useState(() => ...)` initializer (runs once at mount, never updated), so React never
+      re-touches the div's children on later renders — feeding a changing `dangerouslySetInnerHTML` into a
+      live contentEditable on every keystroke is the classic cause of cursor-position-resets-while-typing
+      bugs. Each paper's whole form already remounts via `key={paper.id}` in `PapersTab.tsx`, so switching
+      papers naturally gets a fresh initial value with no extra sync logic needed.
+  - **New `src/lib/richText.ts`**: since these fields now store a constrained HTML string instead of plain
+    text, added `sanitizeHtml()` (allow-lists `b/strong/mark/u/em/i/div/p/span/br`, strips all other
+    attributes except `background-color` on `mark`/`span`, and — important distinction —
+    *drops `script`/`style`/`iframe`/`object`/`embed`/`noscript` **and their text content** entirely* rather
+    than just unwrapping the tag (an earlier version of the sanitizer only unwrapped disallowed tags, which
+    left inert-but-visible text like a stray `alert(1)` behind from a stripped `<script>` — fixed to a full
+    drop for that specific tag set), `plainValueToEditableHtml()` (migrates a paper's pre-existing plain-text
+    field into escaped-HTML-with-`<br>` on first load — detects "already HTML from us" vs "legacy plain text"
+    by checking for a literal `<` in the stored string, since anything we ever save has already gone through
+    `sanitizeHtml`), and `isHtmlEmpty()` (for the print view's "—" empty-field fallback, since checking
+    `html.trim() === ""` would treat e.g. `<br>` as non-empty).
+  - **Found and fixed a real gap via a standalone Playwright repro, not just reasoning**: pasting rich HTML
+    into a `contentEditable` executes hazardous content (confirmed: an `<img onerror="...">` payload fired
+    immediately on paste, via a synthetic `ClipboardEvent` in a throwaway test page) **before** our `onInput`
+    handler (and therefore `sanitizeHtml`) ever runs — sanitizing only the *result* of typing/pasting is too
+    late for paste specifically, since the browser's native paste handling parses and inserts clipboard HTML
+    directly. Fixed by adding `onPaste` to `RichTextEditor` that always `e.preventDefault()`s and inserts only
+    `e.clipboardData.getData("text/plain")` via `execCommand("insertText", ...)` — pasted content can never
+    carry any tag at all now, closing the gap (re-verified with the same payload: no dialog fires, only the
+    plain-text clipboard flavor lands in the editor). This means pasting from elsewhere never preserves
+    foreign rich formatting, which is fine — bold/highlight in this app is only ever creatable via the
+    toolbar buttons anyway.
+  - **Print/PDF export view** (the `hidden print:block` block in `PaperNoteForm.tsx`) now renders each
+    field's value via `dangerouslySetInnerHTML={{ __html: sanitizeHtml(...) }}` (re-sanitized defensively at
+    render time, even though it's already sanitized at save time) instead of a plain-text `<p>`, so bold/
+    highlight actually show up in the exported PDF. New `globals.css` rule `.paper-print mark { background:
+    #fff59d !important; }` — needed because the existing `.paper-print *` print rule force-clears *every*
+    element's background to keep dark-mode colors from bleeding into the printed page, which would otherwise
+    also wipe out the highlight; this is the one deliberate exception to that blanket rule.
+  - `npx tsc --noEmit`, `npm run lint`, `npm run build` all pass clean. **Verified more than build/lint this
+    time**: ran two standalone Playwright scripts (browser downloaded via the project's existing
+    `_npx` cache, not a new dependency) confirming (1) `execCommand("bold")` and the manual
+    `Range.surroundContents(<mark>)` both produce the expected wrapped markup in real Chromium, (2)
+    `sanitizeHtml` correctly neutralizes a payload combining `img onerror`/`script`/`iframe`/`b onclick`,
+    and (3) the `onPaste` fix prevents a rich-HTML clipboard payload from executing at all. **Not** tested
+    inside the actual live app (no login creds in this environment) — the Enter-to-focus-next-input behavior,
+    the toolbar buttons' visual feedback, and the print view's highlight color surviving export haven't been
+    eyeballed in the real logged-in Dashboard.
+
 - **Paper-reading tab: turned "배경 지식" into a repeatable 용어→개념 (term→concept) list, added a 16th
   "배울 점, 깨달은 점" field, and grouped the 16 questions into 5 labeled sections** — follow-up to the
   15-question paper tab from earlier the same day (below), per explicit user request to make the
@@ -1046,14 +1116,20 @@ _Last updated: 2026-08-03_
 
 -8. **User needs to run `supabase/migrations/0011_papers.sql`** before the new "논문 리딩" tab works
    end-to-end (adding/saving a paper will error at the DB layer without it). Not manually browser-tested:
-   add a paper with and without a URL, add/remove a few 용어→개념 rows under "배경 지식", fill in a few of
-   the other 16 fields (including the new #16 "배울 점, 깨달은 점") and save, confirm the error message
-   shows if the migration hasn't been run, confirm the 5 section headers (① 이해하기 ~ ⑤ 총평) render above
-   the right fields, click the list row's "↗" and the detail panel's "PDF 열기" link and confirm both open
-   the URL in a new tab, delete a paper, and — most importantly — click "📄 PDF로 내보내기" and confirm the
-   print-preview dialog shows a clean single-column readout (title + all 16 fields including the
-   term→concept bullet list for 배경 지식, no sidebar/other UI, no blank left margin) with dark, readable
-   text regardless of whether the app is currently in light or dark mode.
+   add a paper with and without a URL, add a few 용어→개념 rows under "배경 지식" (typing a term then
+   pressing Enter should register the row and move focus straight to the next term input — confirm this
+   actually feels right in practice, only build/lint-verified so far, not eyeballed), select text in any
+   field's editor and click the B/🖍 toolbar buttons and confirm real bold/highlighted text appears inline
+   (not markdown syntax), try pasting some rich-formatted text (e.g. copied from a webpage) into a field and
+   confirm it lands as plain text with no formatting carried over (this is intentional, not a bug), fill in
+   the rest of the 16 fields (including #16 "배울 점, 깨달은 점") and save, confirm the error message shows
+   if the migration hasn't been run, confirm the 5 section headers (① 이해하기 ~ ⑤ 총평) render above the
+   right fields, click the list row's "↗" and the detail panel's "PDF 열기" link and confirm both open the
+   URL in a new tab, delete a paper, and — most importantly — click "📄 PDF로 내보내기" and confirm the
+   print-preview dialog shows a clean single-column readout (title + all 16 fields, bold/highlighted text
+   rendered as such — highlighted text should keep its yellow background even though everything else prints
+   dark-on-white — no sidebar/other UI, no blank left margin) with dark, readable text regardless of whether
+   the app is currently in light or dark mode.
 -7. **User needs to run `supabase/migrations/0010_todo_completed_at.sql`** before checking off a todo/goal/
    routine item works end-to-end (checking one will currently error at the DB layer without it). Not manually
    browser-tested: checking several items in sequence stacks them top-to-bottom in check order, unchecking
