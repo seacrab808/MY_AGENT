@@ -12,6 +12,14 @@ interface FlipCardProps {
 export function FlipCard({ word, onToggleStarred, onToggleTriangled }: FlipCardProps) {
   const [flipped, setFlipped] = useState(false);
 
+  // 두 면(front/back) 모두 [backface-visibility:hidden]으로 반대쪽을 뒤집었을 때 "안 보이게"는
+  // 되지만, 실제로 확인해보니(Playwright로 elementFromPoint 테스트) 뒤집힌 상태에서도 안 보이는
+  // 면의 ★/▲ 버튼이 여전히 클릭을 가로챔 — 게다가 front 면은 자기 자신의 상쇄 회전이 없어서
+  // 뒤집혔을 때 좌우가 미러링된 채로 남아있어, 화면엔 뒤(back)의 ★/▲가 제자리에 보이는데 실제
+  // 클릭은 그 뒤에 숨어있던 front의 ▲/★(좌우가 바뀐 위치)가 받아버림 — 이게 "카드를 뒤집으면
+  // 별/세모 클릭이 반대로 되는" 증상의 원인. backface-visibility만으로는 클릭까지 막아주지
+  // 않으므로, 지금 보이지 않는 쪽 면에 pointer-events-none을 명시적으로 줘서 막음.
+
   return (
     <div
       className="relative h-36 [perspective:1000px] cursor-pointer select-none"
@@ -24,6 +32,8 @@ export function FlipCard({ word, onToggleStarred, onToggleTriangled }: FlipCardP
       >
         <div
           className={`absolute inset-0 [backface-visibility:hidden] border-2 border-pixel-border rounded-[14px] flex items-center justify-center p-3 text-center shadow-[var(--pixel-shadow)] text-pixel-chip-ink ${
+            flipped ? "pointer-events-none" : ""
+          } ${
             word.is_starred
               ? "bg-gradient-to-b from-[#ffedb0] to-pixel-yellow"
               : word.is_triangled
@@ -66,7 +76,11 @@ export function FlipCard({ word, onToggleStarred, onToggleTriangled }: FlipCardP
           )}
         </div>
 
-        <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] border-2 border-pixel-border rounded-[14px] flex items-center justify-center p-3 text-center bg-gradient-to-b from-[#cdf5e0] to-pixel-mint shadow-[var(--pixel-shadow)] text-pixel-chip-ink">
+        <div
+          className={`absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] border-2 border-pixel-border rounded-[14px] flex items-center justify-center p-3 text-center bg-gradient-to-b from-[#cdf5e0] to-pixel-mint shadow-[var(--pixel-shadow)] text-pixel-chip-ink ${
+            flipped ? "" : "pointer-events-none"
+          }`}
+        >
           <p className="font-body text-base break-words">{word.meaning}</p>
           {onToggleStarred && (
             <button

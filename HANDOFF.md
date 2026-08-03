@@ -3,9 +3,44 @@
 Running handoff note for the next agent. Update this file (don't append a new one) after a meaningful chunk
 of work — read this file first, before digging through conversation history or git log.
 
-_Last updated: 2026-07-31_
+_Last updated: 2026-08-03_
 
 ## Tried
+
+- **Fixed the vocab `FlipCard`'s real root cause for "세모 저장이 잘 안되고 있는 것 같아" (and the earlier
+  "flipping swaps star/triangle clicks" report) — this time actually confirmed with a live browser test, not
+  just reasoning**: the *previous* "fixed" pass on this same card (see the "4 smaller fixes" entry further
+  below) only made the ★/▲ buttons visually rotate with the card by duplicating them into both faces — it did
+  **not** fix the actual click-routing bug, which is a different, subtler issue:
+  - **Root cause, confirmed via an isolated repro + Playwright (`elementFromPoint` at the button's screen
+    coordinates, before/after flipping, plus a screenshot)**: `[backface-visibility:hidden]` hides the
+    *inactive* face from painting, but — at least in this Chromium build, likely because the ★/▲ buttons have
+    their own `z-index: 20` which pulls them into a separate stacking context — it does **not** also exclude
+    that face's buttons from hit-testing. So when the card is flipped, what you *see* is the back face's
+    correctly-positioned ★/▲ (this part was fine), but what actually **receives the click** is the invisible
+    front face's ★/▲ underneath — and since the front face has no counter-rotation of its own (only the back
+    face does, specifically to cancel the mirroring for reading direction), its buttons are still sitting
+    mirrored left↔right from the flip, so front's ▲ ends up at the on-screen *left* and front's ★ at the
+    on-screen *right*. Net effect: clicking the visually-correct "▲" on the back face actually toggles the
+    *front face's* `is_starred`, not `is_triangled` — this is exactly the "flip 하면 반대로 클릭된다" symptom,
+    and also fully explains "세모 저장이 안 된다": the user clicks ▲ expecting `is_triangled` to flip, but
+    `is_starred` silently changes instead (nothing you'd expect to see updates, since the *back* face's own
+    background never reflected star/triangle state to begin with — only the front face's gradient does).
+  - Repro'd with a standalone HTML file (same 2-face/backface-visibility/z-index structure) driven by
+    Playwright: confirmed `elementFromPoint` at the visible ★/▲ position returns the *front* face's buttons
+    both immediately after flipping and after flipping back (not the back face's, even though the back face
+    is what's painted) — then confirmed adding `pointer-events-none` to whichever face isn't currently active
+    (toggled by the same `flipped` boolean already driving the rotation) makes `elementFromPoint` correctly
+    return the *visible* face's button in both states. Applied the identical fix to the real
+    `FlipCard.tsx`: front face gets `pointer-events-none` when `flipped`, back face gets it when *not*
+    `flipped`.
+  - Double-checked `VocabQuizTab.tsx`'s `handleToggleStarred`/`handleToggleTriangled` (the actual Supabase
+    persistence) — both are structurally identical, symmetric, correct; there was never a separate
+    triangle-specific save bug, it was 100% this click-misattribution issue.
+  - `npx tsc --noEmit`, `npm run lint`, `npm run build` all pass clean. This one *was* verified with a real
+    (if isolated, non-logged-in) browser test this time, not just build/lint — see the repro method above.
+    Not re-verified inside the actual live app (no login creds in this environment), but the underlying CSS
+    mechanism is identical, so this should carry over directly.
 
 - **User reported "이달의 회고랑 오늘의 일기 왜 저장이 안되어있지" — investigated, most likely root cause is
   the still-unrun `0009_diary_mood_and_retrospectives.sql` migration, but the bigger/permanent fix is that
