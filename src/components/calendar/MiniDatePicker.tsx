@@ -33,11 +33,11 @@ export function MiniDatePicker({ value, onSelect }: MiniDatePickerProps) {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <PixelIconButton onClick={() => setViewMonth((d) => subMonths(d, 1))} aria-label="이전 달">
+        <PixelIconButton type="button" onClick={() => setViewMonth((d) => subMonths(d, 1))} aria-label="이전 달">
           {"<"}
         </PixelIconButton>
         <h3 className="font-cute text-xl">{format(viewMonth, "yyyy년 M월")}</h3>
-        <PixelIconButton onClick={() => setViewMonth((d) => addMonths(d, 1))} aria-label="다음 달">
+        <PixelIconButton type="button" onClick={() => setViewMonth((d) => addMonths(d, 1))} aria-label="다음 달">
           {">"}
         </PixelIconButton>
       </div>

@@ -7,6 +7,31 @@ _Last updated: 2026-08-06_
 
 ## Tried
 
+- **Fixed "학기 기간을 등록하는데 자꾸 등록하려니까 꺼져" — the course-registration modal closing itself
+  while picking the semester date range.** Root cause: `MiniDatePicker.tsx`'s month-navigation arrows
+  (`<`/`>`, via `PixelIconButton`) had no `type="button"`. `PixelIconButton`/`PixelButton` don't default
+  their own `type`, so a plain `<button>` with no explicit `type` inside an ancestor `<form>` falls back to
+  the HTML default of `type="submit"`. `MiniDatePicker` is rendered inside `DateField`'s nested `PixelModal`,
+  which — since `PixelModal` isn't a React portal, just a plain absolutely-positioned div wherever it's used
+  in JSX — is still a DOM descendant of `CourseForm`'s (or `EventForm`'s) `<form onSubmit=...>`. So clicking
+  the `>` arrow to move to a future month (which is exactly what setting a semester's end date normally
+  requires, since it's usually months ahead) submitted the whole course form immediately, mid-pick, instead
+  of just changing the calendar's displayed month — if the rest of the form happened to already be valid
+  (title filled, at least one session row), that silent premature submit succeeded and closed the modal,
+  which read as "it just turns off." **Fix**: added `type="button"` to both `PixelIconButton`s in
+  `MiniDatePicker.tsx`. This is a shared component used by both `CourseForm.tsx` and `EventForm.tsx`'s
+  `DateField`, so the same latent bug is now fixed for the regular event date picker too, not just courses
+  (it likely never got reported there since people navigate months less often when picking a single event
+  date vs. a semester's end date). **Did not** touch `MiniMonthYearPicker.tsx`'s identical-looking nav
+  buttons — it has the same missing-`type` pattern but is only ever used by `MonthCalendar.tsx` outside any
+  `<form>`, so it isn't actually exposed to this bug; left alone as out of scope for this fix.
+  - `npx tsc --noEmit`, `npm run lint`, `npm run build` all pass clean. **Not manually browser-tested** (same
+    no-login-creds/no-browser-tool limitation as the rest of this session) — next session or the user should
+    confirm: open "과목 등록", click the semester-end date field, click `>` a few times to reach a future
+    month, and confirm the modal stays open and only the calendar's month changes (no premature submit),
+    then actually pick a date and confirm the form is still fully editable afterward (title/sessions/notes
+    unaffected), then submit for real and confirm the course saves with the intended date range.
+
 - **New "시간표" (timetable) sidebar tab** — full request: Mon-Sat × 9-18 grid, 15-min resolution with
   hour/30min/15min gridlines of decreasing visual weight, register a course with title/professor/color/time/
   a class-vs-TA tag, sync registered courses into the weekly calendar and daily planner as read-only schedule
