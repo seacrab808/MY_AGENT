@@ -3,9 +3,86 @@
 Running handoff note for the next agent. Update this file (don't append a new one) after a meaningful chunk
 of work — read this file first, before digging through conversation history or git log.
 
-_Last updated: 2026-08-03_
+_Last updated: 2026-08-06_
 
 ## Tried
+
+- **New "시간표" (timetable) sidebar tab** — full request: Mon-Sat × 9-18 grid, 15-min resolution with
+  hour/30min/15min gridlines of decreasing visual weight, register a course with title/professor/color/time/
+  a class-vs-TA tag, sync registered courses into the weekly calendar and daily planner as read-only schedule
+  chips, a detail view with a free-text memo (what the class covers, midterm/final dates, project-heavy or
+  not, etc.), and a semester date range (며칠부터 며칠까지) per course that bounds how far the recurring
+  weekly sessions propagate.
+  - **Data model**: two new tables (`supabase/migrations/0012_timetable_courses.sql`, not yet run by the
+    user — see "Failed / blocked"): `courses` (title/professor/kind `class|ta`/color hex/semester_start/
+    semester_end/notes, owner-RLS) and `course_sessions` (course_id FK/day_of_week 0-6/start_time/end_time,
+    owner-RLS, `on delete cascade` from courses). A course can have multiple sessions (e.g. Mon+Wed) since
+    that's the normal shape of a real class schedule — the timetable grid, weekly calendar, and daily planner
+    all iterate `course.sessions`, not just a single time.
+  - **Deliberately did NOT create real rows in the `events` table for course sessions.** Considered it
+    (materializing one `events` row per weekly occurrence for the whole semester) and rejected it: it would
+    mean hundreds of DB rows per course, an edit to a course's time/color needing to fan out and update every
+    already-materialized row, and deletes needing the same fan-out. Instead
+    `expandCourseOccurrences(courses, rangeStartKey, rangeEndKey)` (`src/lib/courses.ts`) computes virtual
+    occurrences on the fly, clipped to `[course.semester_start, course.semester_end] ∩ [rangeStart, rangeEnd]`
+    — `WeeklyTab`/`DailyPlannerTab` call this with their own currently-visible date range (a week / a single
+    day) and render the result alongside real events, so course chips always reflect the live course record
+    with zero sync/fan-out logic. This is why "연동" here means "computed and displayed together," not
+    "written into the same table" — clicking a course chip opens `CourseDetailModal` (edit/delete the course
+    itself), not the regular `EventDetailModal`.
+  - **`src/components/tabs/TimetableTab.tsx`**: the Mon-Sat×9-18 grid. Time-label gutter (44px) + 6 flex-1
+    day columns, `9시-18시` at `PX_PER_MIN=1.2` (648px total height). Gridlines are explicit absolutely-
+    positioned divs at every 15-min mark (not a CSS `repeating-linear-gradient`, since a horizontal *dashed*
+    line specifically needs a real `border-top: dashed` — a gradient's stops run along its own axis and can
+    only fake a solid band, not literal dashes) — hour marks get a heavier solid `var(--pixel-ink-soft)`
+    border, 30-min marks a lighter solid `var(--pixel-border)`, 15-min marks the same color but dashed, per
+    the explicit ask for 3 decreasing-strength tiers. Course blocks are positioned absolutely inside their
+    day column via `sessionBlockRect()` (clips a session's time to the visible 9-18 window; a session
+    starting before 9 or ending after 18 renders clipped rather than overflowing the grid — not flagged to
+    the user as a limitation since real class times are virtually always inside a 9-18 window, but worth
+    knowing if someone registers a night class). No collision-avoidance layout for two sessions overlapping
+    the same day/time in the same column (renders stacked, later one on top) — acceptable for a single
+    person's own real schedule, out of scope to build real calendar-style lane-splitting for.
+  - **`src/components/timetable/CourseForm.tsx`**: title/professor/kind-tag/color-palette/sessions-list
+    (day-of-week + start + end, add/remove rows, at least 1 required)/semester-date-range/notes, in one
+    create-or-edit form (mirrors `EventForm.tsx`'s dual-mode pattern via an `initialCourse` prop). Two
+    deliberate departures from `EventForm.tsx`'s own field patterns rather than extracting shared components
+    (kept as local duplicated code — CLAUDE.md's "don't build abstractions for hypothetical reuse" plus these
+    two forms' needs genuinely differ): (1) a **15-minute-only** `TimeSelect` (`EventForm`'s is 5-minute) —
+    matches the grid's own 15-min resolution, no reason to offer finer-grained class start times; (2) color
+    is a real user-picked swatch from a new fixed `COURSE_COLOR_PALETTE` (`src/lib/courses.ts`, 10 pastel
+    hexes extending the app's existing `--pixel-*` tones), unlike regular events where CLAUDE.md documents
+    color as fully category-derived and never user-picked — courses needed a genuine per-course color choice
+    since "수업인지 조교인지" is already covered by the separate kind tag, and a user is likely to register
+    many courses that would otherwise all collapse onto the same 5 category colors.
+  - **`src/components/timetable/CourseDetailModal.tsx`** (view/edit toggle + delete, mirrors
+    `EventDetailModal.tsx`'s pattern minus attachments) is the "상세 보기" — shows the kind tag, professor,
+    every session's day+time, the semester date range, and the free-text notes memo (rendered
+    `whitespace-pre-wrap`, or "메모가 없어요." if empty) that the user can fill with "뭘 하는 수업인지... 발표
+    프로젝트 위주인지, 중간 기말 언제인지" content. **Must be rendered with `key={course.id}` by its parent**
+    (same convention as `EventDetailModal`) so switching between courses resets internal `mode`/
+    `confirmingDelete` state instead of leaking the previous course's edit-mode into the next.
+  - **`WeeklyTab.tsx`/`DailyPlannerTab.tsx`**: each now independently fetches `fetchCoursesWithSessions` on
+    mount (same "each tab owns its own state, refetches on mount" convention CLAUDE.md already documents for
+    events) and renders that tab's date-range occurrences as extra chips — `WeeklyTab` appends course chips
+    into the same per-day cell as regular event chips (colored by `course.color`, prefixed 🎓 or 🧑‍🏫 for
+    class/TA), `DailyPlannerTab` gets a new conditional "🎓 오늘의 수업" card (only rendered when today has
+    ≥1 course occurrence, above "📌 오늘의 일정") since every other daily-planner card always renders even
+    empty and a permanent empty class card on non-class days would be clutter. Both open
+    `CourseDetailModal` on click, entirely separate from the existing `EventDetailModal`/`selectedEvent`
+    state in those files.
+  - `src/lib/tabs.ts`: new `"timetable"` `TabKey`, labeled "시간표" (📚), positioned right after "일일
+    플래너" and before "하루 루틴" in the sidebar nav order (groups it with the other calendar-adjacent tabs).
+    `Dashboard.tsx` renders `<TimetableTab userId={userId} />` on that tab, same prop pattern as every sibling.
+  - `npx tsc --noEmit`, `npm run lint`, `npm run build` all pass clean. **Not manually browser-tested** — no
+    login credentials in this environment (same limitation noted throughout this file), and the Claude-in-
+    Chrome browser tool was declined for this session, so nothing in this entry has had human eyes on it in a
+    real running browser: the grid's gridline weights actually reading as 3 visually distinct tiers, course
+    blocks positioning correctly at their exact time, the color palette/kind-tag/multi-session form actually
+    saving and round-tripping through `fetchCoursesWithSessions`'s `course_sessions(*)` embed, chips showing
+    up correctly in the weekly/daily views once a course is registered, and the semester-date-range clipping
+    (a course chip should stop appearing once `semester_end` passes, and never appear before `semester_start`)
+    — see "Next steps".
 
 - **`RichTextEditor.tsx`: highlight toggle-off + a real Ctrl+Z that actually works for formatting, not just
   typing** — follow-up ask after the typing-fix below: "하이라이트 되면 취소를 못하는데 했다가 취소도 되게
@@ -1131,6 +1208,9 @@ _Last updated: 2026-08-03_
 
 - `npx tsc --noEmit`, `npx eslint src`, and `npm run build` all pass clean as of this handoff (checked
   after every feature batch, not just once at the end).
+- New "시간표" tab (courses/course_sessions tables, grid UI, weekly/daily chip integration — see "Tried"
+  above) is build/lint/typecheck-clean but **not** manually browser-tested (no login creds in this
+  environment, browser tool declined this session) — see "Next steps".
 - `RichTextEditor.tsx`'s undo/redo stack and highlight toggle were verified live via Playwright against the
   real component (see "Tried" above) — this is one of the few paper-tab changes in this file confirmed
   working in a real running browser, not just build/lint-checked. Not yet exercised inside the real,
@@ -1178,6 +1258,8 @@ _Last updated: 2026-08-03_
       without this, checking a todo/goal/routine item off will error at the DB layer)
   11. `supabase/migrations/0011_papers.sql` (new `papers` table — needed for the new "논문 리딩" tab; without
       this, adding a paper or saving its notes will error at the DB layer)
+  12. `supabase/migrations/0012_timetable_courses.sql` (new `courses` + `course_sessions` tables — needed for
+      the new "시간표" tab; without this, registering a course will error at the DB layer)
 
   Until the user runs all pending ones in order, those features will error at the DB layer (or, for #7
   specifically, old events just silently fall back to the `general` color via `eventColor()`'s `??` —
@@ -1218,6 +1300,18 @@ _Last updated: 2026-08-03_
 
 ## Next steps (priority order)
 
+-10. **User needs to run `supabase/migrations/0012_timetable_courses.sql`** before the new "시간표" tab works
+   end-to-end (registering a course will error at the DB layer without it). Not manually browser-tested at
+   all (see "Tried"/"Done" above): register a course with 2+ sessions (e.g. Mon+Wed), confirm both blocks
+   appear on the grid at the right day/time with correct clipping if a time is outside 9-18, confirm the hour/
+   30min/15min gridlines actually look like 3 visually distinct tiers (solid-heavy / solid-light / dashed-
+   light), pick a color from the palette and confirm it round-trips on edit, toggle 수업/조교 and confirm the
+   tag shows correctly in the detail view and as the 🎓/🧑‍🏫 prefix on chips, set a memo in the detail view
+   and confirm it saves, set a semester date range and confirm the course's chips only appear in the weekly
+   calendar/daily planner within that range (not before `semester_start`, not after `semester_end`), edit an
+   existing course's sessions (add/remove a row) and confirm the old session rows are fully replaced not
+   duplicated, and delete a course and confirm its chips disappear from both the weekly calendar and daily
+   planner immediately.
 -9. Not manually browser-tested inside the real, logged-in "논문 리딩" tab (only the isolated `RichTextEditor`
    component was driven directly via a temporary QA route, since there's no login in this environment — see
    "Tried" above): open a paper, type in any field, select some text and click 🖍 to highlight it, click 🖍

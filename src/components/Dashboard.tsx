@@ -12,6 +12,7 @@ import { MonthlyTab } from "@/components/tabs/MonthlyTab";
 import { ChatTab } from "@/components/tabs/ChatTab";
 import { WeeklyTab } from "@/components/tabs/WeeklyTab";
 import { DailyPlannerTab } from "@/components/tabs/DailyPlannerTab";
+import { TimetableTab } from "@/components/tabs/TimetableTab";
 import { RoutinePresetTab } from "@/components/tabs/RoutinePresetTab";
 import { GoalsTab } from "@/components/tabs/GoalsTab";
 import { VocabQuizTab } from "@/components/tabs/VocabQuizTab";
@@ -120,6 +121,7 @@ export function Dashboard({
           </div>
           {activeTab === "weekly" && <WeeklyTab userId={userId} />}
           {activeTab === "daily" && <DailyPlannerTab userId={userId} />}
+          {activeTab === "timetable" && <TimetableTab userId={userId} />}
           {activeTab === "routine_preset" && <RoutinePresetTab userId={userId} />}
           {activeTab === "goals" && <GoalsTab userId={userId} />}
           {activeTab === "vocab" && <VocabQuizTab userId={userId} />}

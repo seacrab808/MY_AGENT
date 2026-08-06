@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { addWeeks, format, subWeeks } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import { eventColor, fetchEventsForRange, groupEventsByDate } from "@/lib/events";
+import { expandCourseOccurrences, fetchCoursesWithSessions } from "@/lib/courses";
 import { toDateKey, weekDays, KOREAN_WEEKDAY } from "@/lib/date";
 import { weekKey } from "@/lib/period";
 import { PixelCard } from "@/components/ui/PixelCard";
@@ -12,7 +13,9 @@ import { TodoList } from "@/components/todo/TodoList";
 import { GoalList } from "@/components/goal/GoalList";
 import { AddEventModal } from "@/components/calendar/AddEventModal";
 import { EventDetailModal } from "@/components/calendar/EventDetailModal";
+import { CourseDetailModal } from "@/components/timetable/CourseDetailModal";
 import type { PlannerEvent } from "@/types/event";
+import type { CourseWithSessions } from "@/types/course";
 
 interface WeeklyTabProps {
   userId: string;
@@ -21,17 +24,32 @@ interface WeeklyTabProps {
 export function WeeklyTab({ userId }: WeeklyTabProps) {
   const [anchor, setAnchor] = useState(() => new Date());
   const [events, setEvents] = useState<PlannerEvent[]>([]);
+  const [courses, setCourses] = useState<CourseWithSessions[]>([]);
   const [addingDateKey, setAddingDateKey] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<PlannerEvent | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<CourseWithSessions | null>(null);
 
   const days = weekDays(anchor);
   const eventsByDate = groupEventsByDate(events);
+  const weekStartKey = toDateKey(days[0]);
+  const weekEndKey = toDateKey(days[6]);
+  const courseOccurrencesByDate = expandCourseOccurrences(courses, weekStartKey, weekEndKey).reduce<
+    Record<string, ReturnType<typeof expandCourseOccurrences>>
+  >((acc, occ) => {
+    (acc[occ.dateKey] ??= []).push(occ);
+    return acc;
+  }, {});
 
   useEffect(() => {
     const supabase = createClient();
-    fetchEventsForRange(supabase, toDateKey(days[0]), toDateKey(days[6])).then(setEvents);
+    fetchEventsForRange(supabase, weekStartKey, weekEndKey).then(setEvents);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [anchor]);
+
+  useEffect(() => {
+    const supabase = createClient();
+    fetchCoursesWithSessions(supabase, userId).then(setCourses);
+  }, [userId]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -87,6 +105,18 @@ export function WeeklyTab({ userId }: WeeklyTabProps) {
                       {event.title}
                     </button>
                   ))}
+                  {(courseOccurrencesByDate[dateKey] ?? []).map((occ) => (
+                    <button
+                      key={occ.session.id}
+                      type="button"
+                      onClick={() => setSelectedCourse(occ.course)}
+                      className="inline-block font-body text-sm leading-snug px-2 py-1 border-2 border-pixel-border rounded-[8px] w-fit text-left cursor-pointer hover:-translate-y-0.5 transition-transform"
+                      style={{ backgroundColor: occ.course.color, color: "var(--pixel-chip-ink)" }}
+                    >
+                      {occ.session.start_time.slice(0, 5)} {occ.course.kind === "ta" ? "🧑‍🏫" : "🎓"}{" "}
+                      {occ.course.title}
+                    </button>
+                  ))}
                 </div>
               </div>
             );
@@ -118,6 +148,23 @@ export function WeeklyTab({ userId }: WeeklyTabProps) {
             setSelectedEvent(null);
           }}
           onDuplicated={(copy) => setEvents((prev) => [...prev, copy])}
+        />
+      )}
+
+      {selectedCourse && (
+        <CourseDetailModal
+          key={selectedCourse.id}
+          course={selectedCourse}
+          userId={userId}
+          onClose={() => setSelectedCourse(null)}
+          onUpdated={(updated) => {
+            setCourses((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+            setSelectedCourse(updated);
+          }}
+          onDeleted={(id) => {
+            setCourses((prev) => prev.filter((c) => c.id !== id));
+            setSelectedCourse(null);
+          }}
         />
       )}
 

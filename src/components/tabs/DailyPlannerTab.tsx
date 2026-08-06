@@ -10,6 +10,7 @@ import {
   rescheduleEvent,
   setEventCheckStatus,
 } from "@/lib/events";
+import { expandCourseOccurrences, fetchCoursesWithSessions } from "@/lib/courses";
 import { toDateKey, ENGLISH_WEEKDAY_FULL } from "@/lib/date";
 import { PixelCard } from "@/components/ui/PixelCard";
 import { PixelIconButton } from "@/components/ui/PixelIconButton";
@@ -23,7 +24,9 @@ import { MiniDatePicker } from "@/components/calendar/MiniDatePicker";
 import { TodoList } from "@/components/todo/TodoList";
 import { TodayRoutineList } from "@/components/routine/TodayRoutineList";
 import { DiaryBox } from "@/components/routine/DiaryBox";
+import { CourseDetailModal } from "@/components/timetable/CourseDetailModal";
 import type { EventCheckStatus, PlannerEvent } from "@/types/event";
+import type { CourseWithSessions } from "@/types/course";
 
 interface DailyPlannerTabProps {
   userId: string;
@@ -32,15 +35,23 @@ interface DailyPlannerTabProps {
 export function DailyPlannerTab({ userId }: DailyPlannerTabProps) {
   const [date, setDate] = useState(() => new Date());
   const [events, setEvents] = useState<PlannerEvent[]>([]);
+  const [courses, setCourses] = useState<CourseWithSessions[]>([]);
   const [adding, setAdding] = useState(false);
   const [pickingDate, setPickingDate] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<PlannerEvent | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<CourseWithSessions | null>(null);
   const dateKey = toDateKey(date);
+  const todayCourseOccurrences = expandCourseOccurrences(courses, dateKey, dateKey);
 
   useEffect(() => {
     const supabase = createClient();
     fetchEventsForRange(supabase, dateKey, dateKey).then(setEvents);
   }, [dateKey]);
+
+  useEffect(() => {
+    const supabase = createClient();
+    fetchCoursesWithSessions(supabase, userId).then(setCourses);
+  }, [userId]);
 
   function handleSetCheckStatus(event: PlannerEvent, status: EventCheckStatus | null) {
     setEvents((prev) => prev.map((e) => (e.id === event.id ? { ...e, check_status: status } : e)));
@@ -130,6 +141,31 @@ export function DailyPlannerTab({ userId }: DailyPlannerTabProps) {
         </PixelCard>
       </div>
 
+      {todayCourseOccurrences.length > 0 && (
+        <PixelCard tape="blue">
+          <h3 className="font-cute text-xl mb-2">🎓 오늘의 수업</h3>
+          <div className="flex flex-col gap-1.5">
+            {todayCourseOccurrences.map((occ) => (
+              <button
+                key={occ.session.id}
+                type="button"
+                onClick={() => setSelectedCourse(occ.course)}
+                className="flex items-center gap-2 w-full text-left font-body text-sm px-2.5 py-1.5 border-2 border-pixel-border rounded-[8px] cursor-pointer hover:-translate-y-0.5 transition-transform"
+                style={{ backgroundColor: occ.course.color, color: "var(--pixel-chip-ink)" }}
+              >
+                <span className="font-bold">
+                  {occ.session.start_time.slice(0, 5)}~{occ.session.end_time.slice(0, 5)}
+                </span>
+                <span>
+                  {occ.course.kind === "ta" ? "🧑‍🏫" : "🎓"} {occ.course.title}
+                </span>
+                {occ.course.professor && <span className="text-xs opacity-80">{occ.course.professor} 교수님</span>}
+              </button>
+            ))}
+          </div>
+        </PixelCard>
+      )}
+
       <PixelCard tape="yellow">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-cute text-xl">📌 오늘의 일정</h3>
@@ -174,6 +210,23 @@ export function DailyPlannerTab({ userId }: DailyPlannerTabProps) {
             setSelectedEvent(null);
           }}
           onDuplicated={(copy) => setEvents((prev) => [...prev, copy])}
+        />
+      )}
+
+      {selectedCourse && (
+        <CourseDetailModal
+          key={selectedCourse.id}
+          course={selectedCourse}
+          userId={userId}
+          onClose={() => setSelectedCourse(null)}
+          onUpdated={(updated) => {
+            setCourses((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+            setSelectedCourse(updated);
+          }}
+          onDeleted={(id) => {
+            setCourses((prev) => prev.filter((c) => c.id !== id));
+            setSelectedCourse(null);
+          }}
         />
       )}
 
